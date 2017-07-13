@@ -1,22 +1,22 @@
-## Defining an Enum
+## 열거형 정의하기
 
-Let’s look at a situation we might want to express in code and see why enums
-are useful and more appropriate than structs in this case. Say we need to work
-with IP addresses. Currently, two major standards are used for IP addresses:
-version four and version six. These are the only possibilities for an IP
-address that our program will come across: we can *enumerate* all possible
-values, which is where enumeration gets its name.
+코드를 작성 할 때, 어떻게 열거형이 구조체 보다 더 적절하고 유용한지 살펴 볼 
+것입니다. IP 주소를 다뤄야 하는 경우를 생각해 봅시다.
+현재 IP 주소에는 두개의 주요한 표준이 있습니다: 버전 4와 버전 6 입니다. 
+프로그램에서 IP 주소에 대해 다룰 때 이 두 가지가 유일한 경우들 입니다:
+모든 가능한 값들을 *나열(enumerate)* 할 수 있으며, 이 경우를 열거라고 부를 수 
+있습니다.
 
-Any IP address can be either a version four or a version six address but not
-both at the same time. That property of IP addresses makes the enum data
-structure appropriate for this case, because enum values can only be one of the
-variants. Both version four and version six addresses are still fundamentally
-IP addresses, so they should be treated as the same type when the code is
-handling situations that apply to any kind of IP address.
+어떤 IP 주소는 버전 4나 버전 6이 될 수 있으며, 동시에 두 버전이 될 수는 
+없습니다.
+IP 주소의 속성을 보면 열거형 자료 구조가 적절합니다. 
+왜냐하면, 열거형의 값은 variants 중 하나만 될 수 있기 때문 입니다.
+버전 4나 버전 6은 근본적으로 IP 주소이기 때문에, 이 둘은 코드에서 모든 종류의 
+IP 주소에 적용되는 상황을 다룰 때 동일한 타입으로 처리되는 것이 좋습니다.
 
-We can express this concept in code by defining an `IpAddrKind` enumeration and
-listing the possible kinds an IP address can be, `V4` and `V6`. These are known
-as the *variants* of the enum:
+`IpAddrKind` 이라는 열거형을 정의하면서 포함할 수 있는 IP 주소인 `V4` 과 `V6` 를
+나열함으로써 이 개념을 코드에 표현할 수 있습니다.
+이것들은 열거형의 *variants* 라고 합니다:
 
 ```rust
 enum IpAddrKind {
@@ -25,7 +25,7 @@ enum IpAddrKind {
 }
 ```
 
-`IpAddrKind` is now a custom data type that we can use elsewhere in our code.
+`IpAddrKind` 이제 코드에서 사용할 수 있는 사용자 정의 데이터 타입 입니다.
 
 ### Enum Values
 
