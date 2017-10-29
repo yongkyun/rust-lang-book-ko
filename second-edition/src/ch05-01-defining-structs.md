@@ -7,7 +7,7 @@
 
 구조체를 정의할 때는 `struct` 키워드를 먼저 입력하고 명명할 구조체명을 입력하면 됩니다. 구조체의 이름은
 함께 묶이게 되는 구성요소들의 의미를 내포할 수 있도록 짓는 것이 좋습니다.
-이후 중괄호 안에서는, 필드(*field*)라 불리는 각 구성요소들의 타입과 접근할 수 있는 이름을 정의합니다.
+이후 괄호 안에서는, 필드(*field*)라 불리는 각 구성요소들의 타입과 접근할 수 있는 이름을 정의합니다.
 
 아래 예제 5-1에서는 사용자 계정에 대한 정보를 저장하는 구조체를 정의합니다.
 
@@ -25,7 +25,7 @@ struct User {
 
 정의한 구조체를 사용하려면, 각 필드의 값을 명세한 인스턴스(*instance*)를 생성해야 합니다.
 인스턴스는 구조체의 이름을 명시함으로써 사용할 수 있고, 필드를 식별할 수 있는 이름인 키와
-그 키에 저장하고자 하는 값의 쌍(`key:value`)을 이어지는 중괄호 안에 추가하여 생성할 수 있습니다.
+그 키에 저장하고자 하는 값의 쌍(`key:value`)을 이어지는 괄호 안에 추가하여 생성할 수 있습니다.
 
 구조체를 정의할때 필드들의 순서가 정의한 필드의 순서와 같을 필요는 없습니다. 달리 서술하자면, 구조체
 정의는 무엇이 들어가야 하는 지 대략적으로 정의된 양식 정도라고 생각하시면 되고, 인스턴스는 그것에
@@ -52,10 +52,28 @@ let user1 = User {
 <span class="caption">Listing 5-2: 구조체 `User`의 인스턴스 생성하기</span>
 
 구조체에서 특정한 값을 읽어오려면, 점(.) 표기법을 사용하시면 됩니다. 사용자의 이메일 값을 얻고자 하면,
-`user1.email` 과 같은 방식으로 접근하실 수 있습니다. 변경이 가능한 구조체에 들어있는 값을 바꾸고자
-할 때는, 아래와 같이 점(.) 표기법을 사용하여 새 값을 할당할 수 있습니다.
-`user1.email = String::from("someone-else@example.com");`
+`user1.email` 과 같은 방식으로 접근하실 수 있습니다. 만약 인스턴스가 변경가능하다면, 점(.) 표시법을 
+사용하고 특정 필드에 할당하여 값을 변경할 수 있습니다. 예제 5-3은 변경가능한 `User` 인스터스의 
+`email` 필드의 어떻게 변경하는지 보여줍니다.
 
+```rust
+# struct User {
+#     username: String,
+#     email: String,
+#     sign_in_count: u64,
+#     active: bool,
+# }
+#
+let mut user1 = User {
+    email: String::from("someone@example.com"),
+    username: String::from("someusername123"),
+    active: true,
+    sign_in_count: 1,
+};
+
+user1.email = String::from("anotheremail@example.com");
+```
+<span class="caption">Listing 5-3: `User` 인스턴스의 `email` 필드 값을 변경하기</span>
 
 ### 변수명이 필드명과 같을 때 간단하게 필드 초기화하기
 
