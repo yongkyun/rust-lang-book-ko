@@ -21,7 +21,7 @@ struct User {
 }
 ```
 
-<span class="caption">Listing 5-1: 사용자 계정정보를 저장하는 `User` 구조체 정의</span>
+<span class="caption">예제 5-1: 사용자 계정정보를 저장하는 `User` 구조체 정의</span>
 
 정의한 구조체를 사용하려면, 각 필드의 값을 명세한 인스턴스(*instance*)를 생성해야 합니다.
 인스턴스는 구조체의 이름을 명시함으로써 사용할 수 있고, 필드를 식별할 수 있는 이름인 키와
@@ -49,7 +49,7 @@ let user1 = User {
 };
 ```
 
-<span class="caption">Listing 5-2: 구조체 `User`의 인스턴스 생성하기</span>
+<span class="caption">예제 5-2: 구조체 `User`의 인스턴스 생성하기</span>
 
 구조체에서 특정한 값을 읽어오려면, 점(.) 표기법을 사용하시면 됩니다. 사용자의 이메일 값을 얻고자 하면,
 `user1.email` 과 같은 방식으로 접근하실 수 있습니다. 만약 인스턴스가 변경가능하다면, 점(.) 표시법을 
@@ -73,7 +73,7 @@ let mut user1 = User {
 
 user1.email = String::from("anotheremail@example.com");
 ```
-<span class="caption">Listing 5-3: `User` 인스턴스의 `email` 필드 값을 변경하기</span>
+<span class="caption">예제 5-3: `User` 인스턴스의 `email` 필드 값을 변경하기</span>
 
 ### 변수명이 필드명과 같을 때 간단하게 필드 초기화하기
 
