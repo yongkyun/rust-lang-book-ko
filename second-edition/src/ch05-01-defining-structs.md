@@ -52,8 +52,8 @@ let user1 = User {
 <span class="caption">예제 5-2: 구조체 `User`의 인스턴스 생성하기</span>
 
 구조체에서 특정한 값을 읽어오려면, 점(.) 표기법을 사용하시면 됩니다. 사용자의 이메일 값을 얻고자 하면,
-`user1.email` 과 같은 방식으로 접근하실 수 있습니다. 만약 인스턴스가 변경가능하다면, 점(.) 표시법을 
-사용하고 특정 필드에 할당하여 값을 변경할 수 있습니다. 예제 5-3은 변경가능한 `User` 인스터스의 
+`user1.email` 과 같은 방식으로 접근하실 수 있습니다. 만약 인스턴스가 변경가능하다면, 점(.) 표시법을
+사용하고 특정 필드에 할당하여 값을 변경할 수 있습니다. 예제 5-3은 변경가능한 `User` 인스터스의
 `email` 필드의 어떻게 변경하는지 보여줍니다.
 
 ```rust
@@ -103,38 +103,7 @@ fn build_user(email: String, username: String) -> User {
 
 ### 변수명이 필드명과 같을 때 간단하게 필드 초기화하기
 
-변수명과 구조체의 필드명이 같다면, 필드 초기화 축약법(*field init shorthand*) 을 이용할 수 있습니다. 
-이를 활용하면 구조체를 생성하는 함수를 더 간단히 작성할 수 있게 됩니다.
-아래 예제 5-3의 `build_user` 함수에는 `email`과 `username` 라는 매개변수가
-있습니다. 함수는 `User`구조체가 구현된 인스턴스를 반환합니다.
-
-
-```rust
-# struct User {
-#     username: String,
-#     email: String,
-#     sign_in_count: u64,
-#     active: bool,
-# }
-#
-fn build_user(email: String, username: String) -> User {
-    User {
-        email: email,
-        username: username,
-        active: true,
-        sign_in_count: 1,
-    }
-}
-```
-
-<span class="caption">예제 5-3: 사용자의 이메일과 이름을 받아 `User`구조체의 인스턴스를
-반환하는 `build_user` 함수</span>
-
-매개변수인 `email`과 `username`이 `User`구조체의 필드명과 같기 떄문에, 함수 `build_user`
-에서 `email`과 `username`를 명시하는 부분을 예제 5-4와 같이 다시 작성할 필요가 없습니다.
-
-예제 5-4의 `build_user` 함수는 예제 5-3과 같은 방식으로 동작합니다. 필드 초기화를 이러한 방식으로
-수행하는 문법은 간결한 코드를 작성하는데 도움이 되고, 많은 필드의 값이 정의되어야할 때 특히 유용합니다.
+예제5-4에서 파라미터명과 구조체의 필드명이 완전히 같기 때문에, 우리는 `build_user` 함수를 개선하기 위해 완전히 동일하게 작동하지만, 예제5-5처럼  `email`과 `username`을 반복하지 않습니다.
 
 ```rust
 # struct User {
@@ -154,8 +123,10 @@ fn build_user(email: String, username: String) -> User {
 }
 ```
 
-<span class="caption">예제 5-4: 매개변수 `email`과 `username`가 구조체의 필드와 이름이
-같아, 함수 내에서 특별히 명시하지 않고 초기화한 예인 `build_user` 함수</span>
+<span class="caption">Listing 5-5: 구조체의 필드명과 동일한 이름의 `email`과 `username` 파라미터를 가지기 때문에 필드 초기화 축약법을 사용한 `build_user` 함수 </span>
+
+여기서, 우리는 `email`이라는 필드명을 가진 `User` 구조체의 새로운 인스턴스를 만듭니다. 우리는 `email` 필드의 값이 `build_user` 함수의 `email` 파라미터의 값을 설정하길 원합니다. `email` 필드와 `email` 파라미터는 같은 이름을 가지기 때문에 우리는 단지 `email: email` 보다는 `email`이라고 써야할 필요가 있습니다.
+(>-->line 150)
 
 ### 구조체 갱신법을 이용하여 기존 구조체 인스턴스로 새 구조체 인스턴스 생성하기
 
