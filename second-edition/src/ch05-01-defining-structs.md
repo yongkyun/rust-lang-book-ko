@@ -75,6 +75,40 @@ user1.email = String::from("anotheremail@example.com");
 ```
 <span class="caption">예제 5-3: `User` 인스턴스의 `email` 필드 값을 변경하기</span>
 
+Note that the entire instance must be mutable; Rust doesn’t allow us to mark
+only certain fields as mutable. Also note that as with any expression, we can
+construct a new instance of the struct as the last expression in the function
+body to implicitly return that new instance.
+전체 인스턴스는 변경가능해야 합니다; Rust는 특정 필드만 변경가능하게 표시하도록 허용하지 않습니다. 또한 어떤 표현식과 마찬가지로, 함수 내부에서 새로운 인스턴스를 암시적으로 반환하기 위해 마지막 표현으로 구조체의 새로운 인스턴스를 구성할 수 있습니다.
+
+Listing 5-4 shows a `build_user` function that returns a `User` instance with
+the given email and username. The `active` field gets the value of `true`, and
+the `sign_in_count` gets a value of `1`.
+
+예제 5-4는 주어진 이메일과 사용자명을 가진 `User` 인스턴스를 반환하는 `build_user` 함수를 보여줍니다. `active` 필드는 `true` 값을 가지고, `sign_in_count` 는 `1`을 가집니다.
+
+```rust
+# struct User {
+#     username: String,
+#     email: String,
+#     sign_in_count: u64,
+#     active: bool,
+# }
+#
+fn build_user(email: String, username: String) -> User {
+    User {
+        email: email,
+        username: username,
+        active: true,
+        sign_in_count: 1,
+    }
+}
+```
+
+<span class="caption">예제 5-4: 이메일과 사용자이름을 가지고 `User`를 반환하는 `build_user` 함수</span>
+
+구조체 필드와 같은 이름으로 함수 인자를 이름 짓는 것은 의미가 있지만, `email`과 `username` 필드명을 반복해야 하는 것은 약간 지루합니다. 구조체가 더 많은 필드를 가지고 있다면, 이름들을 반복하는 것은 더 성가시게 됩니다. 다행히, 편리하게 사용할 방법이 있습니다.
+
 ### 변수명이 필드명과 같을 때 간단하게 필드 초기화하기
 
 변수명과 구조체의 필드명이 같다면, 필드 초기화 축약법(*field init shorthand*) 을 이용할 수 있습니다. 
