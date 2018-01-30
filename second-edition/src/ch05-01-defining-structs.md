@@ -75,15 +75,7 @@ user1.email = String::from("anotheremail@example.com");
 ```
 <span class="caption">예제 5-3: `User` 인스턴스의 `email` 필드 값을 변경하기</span>
 
-Note that the entire instance must be mutable; Rust doesn’t allow us to mark
-only certain fields as mutable. Also note that as with any expression, we can
-construct a new instance of the struct as the last expression in the function
-body to implicitly return that new instance.
 전체 인스턴스는 변경가능해야 합니다; Rust는 특정 필드만 변경가능하게 표시하도록 허용하지 않습니다. 또한 어떤 표현식과 마찬가지로, 함수 내부에서 새로운 인스턴스를 암시적으로 반환하기 위해 마지막 표현으로 구조체의 새로운 인스턴스를 구성할 수 있습니다.
-
-Listing 5-4 shows a `build_user` function that returns a `User` instance with
-the given email and username. The `active` field gets the value of `true`, and
-the `sign_in_count` gets a value of `1`.
 
 예제 5-4는 주어진 이메일과 사용자명을 가진 `User` 인스턴스를 반환하는 `build_user` 함수를 보여줍니다. `active` 필드는 `true` 값을 가지고, `sign_in_count` 는 `1`을 가집니다.
 
@@ -137,7 +129,6 @@ fn build_user(email: String, username: String) -> User {
 
 <span class="caption">예제 5-3: 사용자의 이메일과 이름을 받아 `User`구조체의 인스턴스를
 반환하는 `build_user` 함수</span>
-
 
 매개변수인 `email`과 `username`이 `User`구조체의 필드명과 같기 떄문에, 함수 `build_user`
 에서 `email`과 `username`를 명시하는 부분을 예제 5-4와 같이 다시 작성할 필요가 없습니다.
