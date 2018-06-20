@@ -1,20 +1,18 @@
-## Improving Our I/O Project
+## I/O 프로젝트 개선하기
 
-With this new knowledge about iterators, we can improve the I/O project in
-Chapter 12 by using iterators to make places in the code clearer and more
-concise. Let’s look at how iterators can improve our implementation of the
-`Config::new` function and the `search` function.
+반복자에 대한 새로운 지식을 사용하여 12장의 I/O 프로젝트의 코드들을 더 깔끔하고
+간결하게 개선할 수 있습니다. 반복자를 사용하여 어떻게 `Config::new` 함수와
+`search` 함수의 구현을 개선할 수 있는지 살펴봅시다.
 
 
-### Removing a `clone` Using an Iterator
+### 반복자를 사용하여 `clone` 제거하기
 
-In Listing 12-6, we added code that took a slice of `String` values and created
-an instance of the `Config` struct by indexing into the slice and cloning the
-values, allowing the `Config` struct to own those values. In Listing 13-24,
-we’ve reproduced the implementation of the `Config::new` function as it was in
-Listing 12-23:
+리스트 12-6 에서, `String` 값의 슬라이스를 받고 슬라이스를 인덱싱하고 복사
+함으로써 `Config` 구조체의 인스턴스를 생성하였고, `Config` 구조체가 이 값들을
+소유하도록 했습니다. 리스트 13-24 에서는 리스트 12-23 에 있던것 처럼
+`Config::new` 함수의 구현을 다시 재현 했습니다:
 
-<span class="filename">Filename: src/lib.rs</span>
+<span class="filename">파일명: src/lib.rs</span>
 
 ```rust,ignore
 impl Config {
@@ -33,28 +31,29 @@ impl Config {
 }
 ```
 
-<span class="caption">Listing 13-24: Reproduction of the `Config::new` function
-from Listing 12-23</span>
+<span class="caption">리스트 13-24: 리스트 12-23 의 `Config::new` 함수 재현
+</span>
 
-At the time, we said not to worry about the inefficient `clone` calls because
-we would remove them in the future. Well, that time is now!
+그 당시, 비효율적인 `clone` 호출에 대해 걱정하지 말라고 얘기 했으며 미래에
+없앨 것이라고 했습니다. 자, 그때가 되었습니다!
 
-We needed `clone` here because we have a slice with `String` elements in the
-parameter `args`, but the `new` function doesn’t own `args`. To return
-ownership of a `Config` instance, we had to clone the values from the `query`
-and `filename` fields of `Config` so the `Config` instance can own its values.
+`String` 요소들의 슬라이스를 `args` 파라미터로 받았지만 `new` 함수는 `args` 를
+소유하지 않기 때문에 `clone` 이 필요했습니다. `Config` 인스턴스의 소유권을
+반환하기 위해, `Config` 의 `query` 와 `filename` 필드로 값을 복제 함으로써
+`Config` 인스턴스는 그 값들을 소유할 수 있습니다.
 
-With our new knowledge about iterators, we can change the `new` function to
-take ownership of an iterator as its argument instead of borrowing a slice.
-We’ll use the iterator functionality instead of the code that checks the length
-of the slice and indexes into specific locations. This will clarify what the
-`Config::new` function is doing because the iterator will access the values.
+반복자에 대한 새로운 지식으로, 인자로써 슬라이스를 빌리는 대신 반복자의 소유권을
+갖도록 `new` 함수를 변경할 수 있습니다. 슬라이스의 길이를 체크하고 특정 위치로
+인덱싱을 하는 코드 대신 반복자의 기능을 사용할 것 입니다. 이것은 반복자가 값에
+접근 할 것이기 때문에 `Config :: new` 함수가 무엇을 하는지를 명확하게 해줄
+것입니다.
 
-Once `Config::new` takes ownership of the iterator and stops using indexing
-operations that borrow, we can move the `String` values from the iterator into
-`Config` rather than calling `clone` and making a new allocation.
+`Config::new` 가 반복자의 소유권을 갖고 빌린 값에 대한 인뎅싱을 사용하지 않게
+된다면, `clone` 을 호출하고 새로운 할당을 만드는 대신 `String` 값들을 반복자에서
+`Config` 로 이동할 수 있습니다.
 
-#### Using the Returned Iterator Directly
+
+#### 반환된 반복자를 바로 사용하기
 
 Open your I/O project’s *src/main.rs* file, which should look like this:
 
