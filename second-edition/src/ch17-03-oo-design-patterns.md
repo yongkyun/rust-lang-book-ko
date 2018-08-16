@@ -1,34 +1,19 @@
-## Object-Oriented Design Pattern Implementation
+## 객체 지향 디자인 패턴 구현
 
-Let's look at an example of the state design pattern and how to use it in Rust.
-The *state pattern* is when a value has some internal state, and the value's
-behavior changes based on the internal state. The internal state is represented
-by a set of objects that inherit shared functionality (we'll use structs and
-traits since Rust doesn't have objects and inheritance). Each state object is
-responsible for its own behavior and the rules for when it should change into
-another state. The value that holds one of these state objects doesn't know
-anything about the different behavior of the states or when to transition
-between states. In the future when requirements change, we won't need to change
-the code of the value holding the state or the code that uses the value. We'll
-only need to update the code inside one of the state objects to change its
-rules, or perhaps add more state objects.
+*상태 패턴*은 객체지향 디자인 패턴입니다. 패턴의 핵심은 *상태 객체*들의 집합으로 표현되는 일종의 내부 변수를 갖으며, 변수의 행위 변화는 내부 상태에 기반한다는 겁니다. 상태 객체들은 기능을 공유합니다: Rust에서, 당연하게도, 우리는 구조체와 특성을 객체와 상속대신 사용합니다. 각 상태 객체들은 다른 상태로 변경되어야 할 때의 제어와 그 자신의 행위를 담당합니다. 
 
-In order to explore this idea, we're going to implement a blog post workflow in
-an incremental way. The workflow that we want our blog posts to follow, once
-we're done with the implementation, is:
+상태 패턴을 사용한다는 의미는 비지니스가 프로그램의 변화를 요구할 시에, 상태를 나타내는 변수나 그 변수를 사용하는 코드를 변경할 필요가 없다는 겁니다. 단지 우리는 상태 객체 중에 하나의 내부 코드를 그 규칙대로 변경하거나 상태 객체를 추가하면 되죠. 상태 디자인 패턴 예제를 살펴보고 그를 Rust에서 어떻게 사용할 수 있는지 알아봅시다.
 
-1. A blog post starts as an empty draft.
-2. Once the draft is done, we request a review of the post.
-3. Once the post is approved, it gets published.
-4. Only published blog posts return content to print so that we can't
-   accidentally print the text of a post that hasn't been approved.
+우리는 점진적 방식으로 블로그에 글을 올리는 작업 흐름을 구현하려고 합니다. 블로그의 최종적 기능은 다음과 같습니다. 
 
-Any other changes attempted on a post should have no effect. For example, if we
-try to approve a draft blog post before we've requested a review, the post
-should stay an unpublished draft.
+1. 블로그 게시물은 빈 초안으로 시작합니다.
+2. 초안이 완료되면 게시물의 검토가 요구된다.
+3. 게시물이 승인되면 게시됩니다.
+4. 오직 공개된 블로그 게시물만이 출력되게 해서, 승인되지 않은 게시물이 실수로라도 공개되지 않도록 합니다.   
 
-Listing 17-11 shows this workflow in code form. This is an example usage of the
-API we're going to implement in a library crate named `blog`:
+이 외에 어떤 시도도 게시물에 영향을 미쳐서는 안됩니다. 예를 들어, 만약 리뷰를 요청하기도 전에 블로그 게시물 초안을 승인하려는 시도를 했다면, 게시물은 비공개 초안인 상태로 유지되야 합니다.
+
+항목 17-11 위의 작업 순서를 코드화: 이는 우리가 우리가 구현할 라이브러리 crate `blog`의 API를 사용하는 예제입니다. 현재는 컴파일되지 않는데 이유는 `blog` crate를 아직 구현하지 않았기 때문이죠. 
 
 <span class="filename">Filename: src/main.rs</span>
 
@@ -50,42 +35,24 @@ fn main() {
 }
 ```
 
-<span class="caption">Listing 17-11: Code that demonstrates the desired
-behavior we want our `blog` crate to have</span>
+<span class="caption">항목 17-11: 코드화 된 우리가 `blog` crate에서 기대하는 동작</span>
 
-We want to be able to create a new draft blog post with `Post::new`. Then, we
-want to add some text to the blog post while we're in the draft state. If we
-try to print out the post's content immediately, though, we shouldn't get any
-text, since the post is still a draft. We've added an `assert_eq!` here for
-demonstration purposes. Asserting that a draft blog post returns an empty
-string from the `content` method would make an excellent unit test in our
-library, but we're not going to write tests for this example.
+우리가 허용하고자 하는 것은 사용자가 새로운 블로그 포스트 초안을 `Post::new`를 통해 만들 수 있도록 하는 겁니다. 
+이후에는 블로그 게시물에 초안인 상태로 글을 추가할 수 있도록 하고자 합니다. 
+만약 우리가 게시물의 내용을 승인 전에 보고자 한다면, 아직 초안이기 때문에 아무 일도 일어나지 않을 겁니다. 
+우리가 추가한 `assert_eq!`는 이런 의도를 명확히 했습니다. 
+이를 위한 훌륭한 유닛 테스트는 블로그 게시물 초안이 `content` 메소드에 대해 빈 문자열을 반환하는 것이겠지만, 
+우리는 이 예제를 위한 테스트를 구현하진 않을 겁니다.
 
-Next, we want to be able to request a review of our post, and `content` should
-still return an empty string while waiting for a review. Lastly, when we
-approve the blog post, it should get published, which means the text we added
-will be returned when we call `content`.
+다음으로, 게시물의 리뷰를 요청하는 것을 허용하고자 하고, 리뷰를 기다리는 동안에는 빈 문자열을 반환하도록 하고 싶습니다. 
+게시물이 허가를 받은 시점에, 그는 배포는데, 이는 게시물의 글이 `content`의 호출로 반환될 수 있게 된다는 뜻 입니다.
 
-Notice that the only type we're interacting with from the crate is the `Post`
-type. The various states a post can be in (draft, waiting for review,
-published) are managed internally to the `Post` type. The states change due to
-the methods we call on the `Post` instance, but we don't have to manage the
-state changes directly. This also means we won't make a mistake with the
-states, like forgetting to request a review before publishing.
 
-### Defining `Post` and Creating a New Instance in the Draft State
+강조하고 싶은 것은, 우리가 상호작용 하는 유일한 타입은 crate `Post` 타입이라는 겁니다. 이 타입은 상태 패턴을 사용할 것이고 값을 저장하여 게시물이 가질 수 있는 다양한 상태 중에 세 가지 상태 객체 중 하나를 나타냅니다 — 초안, 리뷰대기, 혹은 게시됨. 하나의 상태에서 다른 상태로 변경되는 것은 `Post` 타입과 함께 관리됩니다. 상태의 변화는 우리의 라이브러리 사용자가 `Post` 인스턴스의 메소드를 호출하고 이에 대한 응답으로 바뀝니다. 하지만 그들은 상태 변화를 직접적으로 관리할 필요가 없습니다. 또한, 사용자가 상태에 관해 리뷰 전에 게시물이 공개되는 것 같은 실수 할 수 없도록 만듭니다.
 
-Let's get started on the implementation of the library! We know we want to have
-a public `Post` struct that holds some content, so let's start with the
-definition of the struct and an associated public `new` function to create an
-instance of `Post` as shown in Listing 17-12. We're also going to have a
-private trait `State`. `Post` will hold a trait object of `Box<State>` inside
-an `Option` in a private field named `state`. We'll see why the `Option` is
-necessary in a bit. The `State` trait defines all the behavior different post
-states share, and the `Draft`, `PendingReview`, and `Published` states will all
-implement the `State` trait. For now, the trait does not have any methods, and
-we're going to start by defining just the `Draft` state since that's the state
-we want to start in:
+### `Post`를 정의하고 초안 상태의 새 인스턴스 생성하기
+
+라이브러리의 구현을 시작해보죠! 우리가 아는 것은 우리가 public `Post` 구조체를 컨텐츠를 유지하는데 필요하다는 겁니다, 그러니 우리는 구조체에 대한 정의를 시작할 것이며  관련된 public `new` 함수를 정의하여 `Post`의 인스턴스를 생성할겁니다, 항목 17-12처럼 말이죠. 또한 private `State` 또한 만들겁니다. 이후에 `Post`는 `Box<State>`인 특성 객체를 `Option` 내부에 private 필드 `state`로 포함할겁니다. 곧 `Option`이 왜 필요한지 보게 될 겁니다. 
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -111,26 +78,16 @@ struct Draft {}
 impl State for Draft {}
 ```
 
-<span class="caption">Listing 17-12: Definition of a `Post` struct and a `new`
-function that creates a new `Post` instance, a `State` trait, and a `Draft`
-struct that implements `State`</span>
+<span class="caption">
+항목 17-12: `Post` 구조체의 정의와 `Post`인스턴스를 만드는 `new` 함수의 정의, `State` 특성과 `Draft` 구조체</span>
 
-When we create a new `Post`, we set its `state` field to a `Some` value holding
-a `Box` pointing to a new instance of the `Draft` struct. This ensures whenever
-we create a new instance of `Post`, it'll start out as a draft. Because the
-`state` field of `Post` is private, there's no way to create a `Post` in any
-other state!
+`State` 특성은 게시물의 상태 변화에 따라 달라지는 동작을 정의하고, `Draft`, `PendingReview`, 그리고 `Published` 상태는 모두 `State` 특성을 구현하게 됩니다. 특성이 지금은 아무런 메소드도 갖지 않고, 우리는 지금부터 `Draft` 상태의 구현부터 시작하려고 합니다, 왜냐면 그게 게시물이 최초로 갖는 상태이거든요.
 
-### Storing the Text of the Post Content
+우리가 새로운 `Post`를 생성할 때, 그의 `state`필드에 `Box`를 가진 `어떤` 값을 설정합니다. 이 `Box`는 `Draft` 구조체의 새 인스턴스를 가르킵니다. 이는 우리가 어디에서 `Post`의 새 인스턴스를 생성하든지, 초안으로 시작하게 해줍니다. 왜냐면, `Post`의 `state` 필드가 private하기 때문이죠, `Post`는 다른 상태로는 생성할 수 없습니다! `Post::new` 함수에서, 우리는 `content` 필드를 새로운, 빈 `문자열`로 설정합니다.
 
-In the `Post::new` function, we set the `content` field to a new, empty
-`String`. In Listing 17-11, we showed that we want to be able to call a method
-named `add_text` and pass a `&str` to it to add that text to the content of the
-blog post. We're choosing to implement this as a method rather than exposing
-the `content` field as `pub` because we want to be able to control how the
-`content` field's data is read by implementing a method later. The `add_text`
-method is pretty straightforward though, let's add the implementation in
-Listing 17-13 to the `impl Post` block:
+### 게시물 컨텐츠의 글을 저장하기
+
+항목 	17-11이 보여준 것은 우리가 `add_text`로 명명된 메소드를 호출가능하게 하는 것과 그에 `&str`을 넘겨 블로그 게시물의 컨텐츠 글에 추가하게 하는 것입니다. 우리는 이를 `content` 필드를 `pub`으로 노출시키기 보다는 메소드로 구현할 겁니다. 이는 우리가 나중에 구현한 메소드가 `content` 필드의 데이터를 읽는 방식을 제어할 수 있음을 의미합니다. `add_text` 메소드는 매우 직관적이니까, 항목 17-13에서 `impl Post` 블록에 구현을 추가해봅시다!
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -140,35 +97,20 @@ Listing 17-13 to the `impl Post` block:
 # }
 #
 impl Post {
-    // ...snip...
+    // --snip--
     pub fn add_text(&mut self, text: &str) {
         self.content.push_str(text);
     }
 }
 ```
 
-<span class="caption">Listing 17-13: Implementing the `add_text` method to add
-text to a post's `content`</span>
+<span class="caption">항목 17-13: `add_text` 메소드를 구현하여 게시물의 `content`에 글 추가하기</span>
 
-`add_text` takes a mutable reference to `self`, since we're changing the `Post`
-instance that we're calling `add_text` on. We then call `push_str` on the
-`String` in `content` and pass the `text` argument to add to the saved
-`content`. This isn't part of the state pattern since its behavior doesn't
-depend on the state that the post is in. The `add_text` method doesn't interact
-with the `state` field at all, but it is part of the behavior we want to
-support.
+`add_text`메소드 가변 참조자 `self`를 취하는데, 그 이유는 우리가 호출하는 `add_text`이 존재하는 `Post` 인스턴스를 변경하게 되기 때문입니다. 이 때 우리는 `push_str`을 `content`의 `String`에 호출하며 `text`를 인자로 전달해 저장된 `content`에 추가합니다. 이 행위는 게시물의 상태와 무관하게 이뤄지므로, 상태 패턴의 일부가 아닙니다. `add_text` 메소드는 `state` 필드와 전혀 상호작용을 하지 않지만, 우리가 지원하고자 하는 행위 요소입니다.
 
-### Content of a Draft Post is Empty
+### 게시물 초안이 빈 상태임을 확실히 하기
 
-After we've called `add_text` and added some content to our post, we still want
-the `content` method to return an empty string slice since the post is still in
-the draft state, as shown on line 8 of Listing 17-11. For now, let's implement
-the `content` method with the simplest thing that will fulfill this requirement:
-always returning an empty string slice. We're going to change this later once
-we implement the ability to change a post's state to be published. With what we
-have so far, though, posts can only be in the draft state, which means the post
-content should always be empty. Listing 17-14 shows this placeholder
-implementation:
+우리가 `add_text`를 호출한 이후에도 어떤 컨텐츠가 우리의 게시물에 추가될 수 있다고 해도, 여전히 `content` 메소드가 빈 문자열 조각을 반환하길 원하는 이유는 게시물이 아직도 초안 상태이기 때문입니다, 항목 17-11의 8번째 라인처럼요. 당장은 `content` 메소드를 구현하여 최소한도로 필요한 요소를 구현해놓으려고 합니다. 우리는 나중에 게시물의 상태를 변경할 수 있는 기능을 구현하고, 공개될 수 있도록 하려고 합니다. 그 때까지 게시물은 오직 초안 상태로만 존재하기에 게시물 컨텐츠는 항상 비어 있어야 합니다. 항목 17-14는 이를 미리 구현한 내용입니다. 
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -178,32 +120,21 @@ implementation:
 # }
 #
 impl Post {
-    // ...snip...
+    // --snip--
     pub fn content(&self) -> &str {
         ""
     }
 }
 ```
 
-<span class="caption">Listing 17-14: Adding a placeholder implementation for
-the `content` method on `Post` that always returns an empty string slice</span>
+<span class="caption">
+항목 17-14: 항상 비어있는 문자열 조각을 반환하는 `Post`의 `content` 메소드를 미리구현하여 추가</span>
 
-With this added `content` method, everything in Listing 17-11 up to line 8
-works as we intend.
+`conetnet` 메소드를 추가함으로서, 항목 17-11에서 의도한 모든 작업은 8줄로 늘어납니다.
 
-### Requesting a Review of the Post Changes its State
+### 게시물에 대한 리뷰 요청으로 그의 상태 변경
 
-Next up is requesting a review of a post, which should change its state from
-`Draft` to `PendingReview`. We want `post` to have a public method named
-`request_review` that will take a mutable reference to `self`. Then we're going
-to call an internal `request_review` method on the state that we're holding, and
-this second `request_review` method will consume the current state and return a
-new state. In order to be able to consume the old state, the second `request_review`
-method needs to take ownership of the state value. This is where the `Option` comes
-in: we're going to `take` the `Some` value out of the `state` field and leave a
-`None` in its place since Rust doesn't let us have unpopulated fields in
-structs. Then we'll set the post's `state` value to the result of this
-operation. Listing 17-15 shows this code:
+다음으로, 우리는 게시물의 리뷰를 요청하는 기능을 만들어야 하는데, 이를 위해 게시물의 상태를 `Draft`에서 `PendingReview`로 변경해야 합니다. 항목 17-15는 이에 관련된 코드 입니다:
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -214,7 +145,7 @@ operation. Listing 17-15 shows this code:
 # }
 #
 impl Post {
-    // ...snip...
+    // --snip--
     pub fn request_review(&mut self) {
         if let Some(s) = self.state.take() {
             self.state = Some(s.request_review())
@@ -243,41 +174,26 @@ impl State for PendingReview {
 }
 ```
 
-<span class="caption">Listing 17-15: Implementing `request_review` methods on
-`Post` and the `State` trait</span>
+<span class="caption">
+항목 17-15: `Post`와 `State`에 `request_review` 메소드를 구현하기</span>
 
-We've added the `request_review` method to the `State` trait; all types that
-implement the trait will now need to implement the `request_review` method.
-Note that rather than having `self`, `&self`, or `&mut self` as the first
-parameter of the method, we have `self: Box<Self>`. This syntax means the
-method is only valid when called on a `Box` holding the type. This syntax takes
-ownership of `Box<Self>`, which is what we want because we're transforming the
-old state into a new state, and we want the old state to no longer be valid.
+우리는 `self`의 가변 참조를 취할 수 있도록 `request_review`란 이름의 공개 메소드를 `Post`에 주어줬습니다. 이후 우리가 `Post`의 현재 상태의 내부 메소드 `request_review`를 호출하면, 이 두 번째 `request_review` 메소드는 현재의 상태를 소멸하고 새로운 상태를 반환합니다. 
 
-The implementation for the `request_review` method on `Draft` is to return a
-new, boxed instance of the `PendingReview` struct, which is a new type we've
-introduced that represents the state when a post is waiting for a review. The
-`PendingReview` struct also implements the `request_review` method, but it
-doesn't do any transformations. It returns itself since requesting a review on
-a post that's already in the `PendingReview` state should stay in the
-`PendingReview` state.
+우리는 `State` 특성에 `request_review` 메소드를 추가했습니다; 특성을 구현하는 모든 타입은 이제 `request_review` 메소드를 구현해야 합니다. 주목할 점은 메소드의 첫 인자를 `self`, `&self`, 나 `&mut self`를 취하기 보다 `self:Box<Self>`를 가졌다는 겁니다. 이 문법의 의미는 메소드가 오직 `Box`가 지목하는 타입에만 유효함입니다. 해당 문법은 `Box<Self>`의 소유권을 취하고, `Post`의 예전 상태를 무효화하여 새 상태로 변화하게 해줍니다. 
 
-Now we can start seeing the advantages of the state pattern: the
-`request_review` method on `Post` is the same no matter what its `state` value
-is. Each state is responsible for its own rules.
+이전 상태를 소멸하기 위해 `request_review` 메소드는 상태 값의 소유권을 취할 필요가 있습니다. 이는 `Post`의 필드 `state`에 `Option`에서 옵니다: 우리는 `take`메소드를 호출하여 `state`필드의 `Some`값을 취하는데, 왜냐면 Rust는 구조체에 존재하지 않는 필드에 대한 접근을 허용하지 않기 때문입니다. 이는 우리가 대여하기 보다는 게시물 밖으로 `state`의 값을  이동시키도록 만듭니다. 이후 우리는 이런 일련의 동작을 통해 게시물의 `state` 값을 설정하려고 합니다.
 
-We're going to leave the `content` method on `Post` as it is, returning an
-empty string slice. We can now have a `Post` in the `PendingReview` state, not
-just the `Draft` state, but we want the same behavior in the `PendingReview`
-state. Listing 17-11 now works up until line 11!
+우리가 필요한 것은 `self.state = self.state.request_review();`처럼 직접적인 방식보다 `state`를 임시로 `None`으로 설정하여 `state` 값의 소유권을 얻는 것 입니다. 이는 `Post`가 이전 `state` 값을 우리가 그를 새 상태로 변경시킨 뒤에는 사용할 수 없도록 확고히 합니다.
 
-### Approving a Post Changes the Behavior of `content`
+`Draft`의 `request_review` 메소드는 새로운 포장된 `PendingReview` 구조체의 새 인스턴스를 반환해야 하며, 이는 게시물이 리뷰를 기다린다는 상태를 표현합니다. `PendingReview` 구조체는 또한 `request_review` 메소드를 구현하지만 어떤 변경도 하지 않습니다. 대신, 그는 자신을 반환하여 우리가 이미 `PendingReview` 상태인 게시물에 대한 리뷰를 요청하면 그는 `PendingReview` 상태 그대로 유지됩니다. 
 
-The `approve` method on `Post` will be similar to that of the `request_review`
-method: it will set the `state` to the value that the current state says it
-should have when that state is approved. We'll need to add the `approve` method
-to the `State` trait, and we'll add a new struct that implements `State`, the
-`Published` state. Listing 17-16 shows the new code:
+이제 우리는 상태 패턴의 장점을 알 수 있습니다: `Post`의 `request_review` 메소드는 그의 `state`가 무엇이든 상관없이 동일합니다. 각 상태는 그 자신의 규칙에 따라 맡은 책임을 다할 것 입니다.
+
+우리는 `Post`의 `content` 메소드가 여전히 빈 문자 조각을 반환하도록 나두려고 합니다. 현재 우리는 `PendingReview`  상태를 `Draft` 상태처럼 소유할 수 있게 됐습니다만, `PendingReview`에서도 동일한 동작을 수행하기를 기대합니다. 항목 17-11은 이제 11라인으로 늘었습니다!
+
+### `approve` 메소드를 추가하여 `content`의 동작을 변경하기
+
+`approve` 메소드는 `request_review` 메소드와 유사할겁니다; 이는 `state`를 승인이 된 후에 가져야 할 상태로 변경할 겁니다, 항목 17-16처럼요:
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -288,7 +204,7 @@ to the `State` trait, and we'll add a new struct that implements `State`, the
 # }
 #
 impl Post {
-    // ...snip...
+    // --snip--
     pub fn approve(&mut self) {
         if let Some(s) = self.state.take() {
             self.state = Some(s.approve())
@@ -308,7 +224,7 @@ impl State for Draft {
 #         Box::new(PendingReview {})
 #     }
 #
-    // ...snip...
+    // --snip--
     fn approve(self: Box<Self>) -> Box<State> {
         self
     }
@@ -318,10 +234,10 @@ struct PendingReview {}
 
 impl State for PendingReview {
 #     fn request_review(self: Box<Self>) -> Box<State> {
-#         Box::new(PendingReview {})
+#         self
 #     }
 #
-    // ...snip...
+    // --snip--
     fn approve(self: Box<Self>) -> Box<State> {
         Box::new(Published {})
     }
@@ -340,23 +256,15 @@ impl State for Published {
 }
 ```
 
-<span class="caption">Listing 17-16: Implementing the `approve` method on
-`Post` and the `State` trait</span>
+<span class="caption">
+항목 17-16: `Post`에 `approve` 메소드 구현하고 `State` 특성 구현
+</span>
 
-Similarly to `request_review`, if we call the `approve` method on a `Draft`, it
-will have no effect since it will return `self`. When we call `approve` on
-`PendingReview`, it returns a new, boxed instance of the `Published` struct.
-The `Published` struct implements the `State` trait, and for both the
-`request_review` method and the `approve` method, it returns itself since the
-post should stay in the `Published` state in those cases.
+우리는 `approve` 메소드를 `State` 특성에 추가했고 `State`를 구현하는 새 구조체 `Published` 상태도 추가했습니다.
 
-Now for updating the `content` method on `Post`: we want to return the value in
-the post's `content` field if its state is `Published`, otherwise we want to
-return an empty string slice. Because the goal is to keep all the rules like
-this in the structs that implement `State`, we're going to call a `content`
-method on the value in `state` and pass the post instance (that is, `self`) as
-an argument. Then we'll return the value returned from the `content` method on
-the `state` value as shown in Listing 17-17:
+`request_review`와 유사하게, 우리가 `Draft`의 `approve`메소드를 호출하면, 이는 별 효과가 없는데 이유는 이 때 반환되는 것은 `self`이기 때문이죠. 우리가 `approve`를 `PendingReview`에서 호출하면, 박스포장된 `Published` 구조체의 새 인스턴스가 반환됩니다. `Published` 구조체는 `State` 특성을 구현하고, `request_review`와 `approve` 메소드 양 쪽 모두에서 자기 자신을 반환하므로서 게시물은 `Published` 상태를 유지하게 됩니다.
+
+이제 우리가 해야 할 일은 `Post`의 `content` 메소드를 갱신하는 겁니다: 상태가 `Published`이면, 우리는 게시물의 `content` 필드의 값을 반환하려고 합니다; 그렇지 않다면, 우리는 빈 문자 조각을 항목 17-17처럼 반환할겁니다:
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -370,30 +278,24 @@ the `state` value as shown in Listing 17-17:
 # }
 #
 impl Post {
-    // ...snip...
+    // --snip--
     pub fn content(&self) -> &str {
         self.state.as_ref().unwrap().content(&self)
     }
-    // ...snip...
+    // --snip--
 }
 ```
 
-<span class="caption">Listing 17-17: Updating the `content` method on `Post` to
-delegate to a `content` method on `State`</span>
+<span class="caption">
+항목 17-17: `Post`의 메소드 `content`를 갱신하여 `State`의 `content`메소드 대리하기</span>
 
-We're calling the `as_ref` method on the `Option` because we want a reference
-to the value inside the `Option`. We're then calling the `unwrap` method, which
-we know will never panic because all the methods on `Post` ensure that the
-`state` value will have a `Some` value in it when those methods are done. This
-is one of the cases we talked about in Chapter 12 where we know that a `None`
-value is never possible even though the compiler isn't able to understand that.
+목표하는 바가 이 모든 규칙을 `State`를 구현하는 구조체 내부에 유지하는 것이기 때문에, 우리가 `state`의 값에 `content`메소드를 호출하면서 post 인스턴스(여기서는 `self`)를 인자로 넘기면, 우리는 `state`에 `content` 메소드로부터 반환된 값을 반환하게 됩니다. 
 
-The `content` method on the `State` trait is where the logic for what content
-to return will be. We're going to add a default implementation for the
-`content` method that returns an empty string slice. That lets us not need to
-implement `content` on the `Draft` and `PendingReview` structs. The `Published`
-struct will override the `content` method and will return the value in
-`post.content`, as shown in Listing 17-18:
+우리는 `Option`의 `as_ref` 메소드를 호출하여 그의 소유권을 빌리지 않고 값을 참조하려고 합니다. 왜냐면 `state`는 `Option<Box<State>>`이니, 우리가 `as_ref`를 호출하면 `Option<&Box<State>>`가 반환되기 때문이며, 우리가 대여한 함수 매개변수인 `&self`로부터는 `state`를 이동시킬 수 없기 때문에 에러를 얻게 될 겁니다.
+
+이 때 우리는 `unwrap`메소드를 호출하면, 패닉을 발생시키지 않을 것을 알고 있는데, 그 이유는 `Post`의 메소드는 그들이 완료됐을때 `state`를 항상 `Some` 값으로 보관하고 있을 것을 확신하고 있기 때문입니다. 이는 우리가 9장에서 얘기했던 "컴파일러보다 더 많은 정보를 당신이 가진 상황" 중 하나로, 우리는 컴파일러는 이해하지 못하지만 우리는 `None` 값이 결코 오지 않을 것이라는 걸 알고 있습니다. 
+
+이런 관점에 따라, 우리가 `&Box<State>`의 `content`를 호출할 때의 강제 역참조는 `&`와 `Box`에 영향을 줘서 `content` 메소드가 궁극적으로는 `State` 특성이 구현된 타입에 대해 호출되게 됩니다. 무슨 뜻이냐면, 우리에게 필요한 것은 `content`를 `State` 특성의 정의에 추가하는 것으로,  우리가 가진 상태에 따라 어떤 컨텐츠를 반환할지에 대한 로직을 여기에 삽입할 겁니다; 항목 17-18처럼요.
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -402,100 +304,60 @@ struct will override the `content` method and will return the value in
 #     content: String
 # }
 trait State {
-    // ...snip...
+    // --snip--
     fn content<'a>(&self, post: &'a Post) -> &'a str {
         ""
     }
 }
 
-// ...snip...
+// --snip--
 struct Published {}
 
 impl State for Published {
-    // ...snip...
+    // --snip--
     fn content<'a>(&self, post: &'a Post) -> &'a str {
         &post.content
     }
 }
 ```
 
-<span class="caption">Listing 17-18: Adding the `content` method to the `State`
-trait</span>
+<span class="caption">
+항목 17-18: `State`특성에 `content` 메소드를 추가하기</span>
 
-Note that we need lifetime annotations on this method, like we discussed in
-Chapter 10. We're taking a reference to a `post` as an argument, and we're
-returning a reference to a part of that `post`, so the lifetime of the returned
-reference is related to the lifetime of the `post` argument.
+우리는 기본적인 `content` 메소드를 구현하여 빈 문자 조각을 반환할 겁니다. 이는 우리가 `Draft`와 `PendingReview` 구조체에 `content`를 구현할 필요가 없다는 뜻입니다. `Published` 구조체는 `content`메소드를 재정의하고 `post.content`의 값을 반환할 겁니다. 
 
-### Tradeoffs of the State Pattern
+주의할 점은 10장에서 우리가 토의했던 대로 이 메소드에 대한 생명주기를 주석으로 달 필요가 있다는 겁니다. 우리는 `post`의 참조를 인자로 취할 것이고 그 `post`의 일부에 대한 참조를 반환할 것이기에, 반환되는 참조에 대한 생명주기는 `post` 인자의 생명주기와 관련이 있습니다.
 
-We've shown that Rust is capable of implementing the object-oriented state
-pattern in order to encapsulate the different kinds of behavior that a post
-should have that depends on the state that the post is in. The methods on
-`Post` don't know anything about the different kinds of behavior. The way this
-code is organized, we have one place to look in order to find out all the
-different ways that a published post behaves: the implementation of the `State`
-trait on the `Published` struct.
+그리고 끝났습니다—항목 17-11의 모두가 이제 작동합니다! 우리는 블로그 게시물의 작업 흐름을 상태 패턴을 통해 구현해냈습니다. 규칙과 관련있는 로직들은 `Post`에 흩어져있지 않고 상태 객체에 존재합니다.
 
-An alternative implementation that didn't use the state pattern might have
-`match` statements in the methods on `Post` or even in the code that uses
-`Post` (`main` in our case) that checks what the state of the post is and
-changes behavior in those places instead. That would mean we'd have a lot of
-places to look in order to understand all the implications of a post being in
-the published state! This would get worse the more states we added: each of
-those `match` statements would need another arm. With the state pattern, the
-`Post` methods and the places we use `Post` don't need `match` statements and
-adding a new state only involves adding a new `struct` and implementing the
-trait methods on that one struct.
+### 상태 패턴의 기회비용
 
-This implementation is easy to extend to add more functionality. Here are some
-changes you can try making to the code in this section to see for yourself what
-it's like to maintain code using this pattern over time:
+게시물이 각 상태에 대해 가져야 하는 제각각의 특성이 있는 동작을 캡슐화하여 객체-지향인 상태 패턴을 Rust로 충분히 구현할 수 있음을 보여줬습니다. `Post`의 메소드는 이런 다양한 동작에 대해서 알 수가 없죠. 우리가 코드를 구조화한 방식에 따라, 공개된 게시물이 할 수 있는 다양한 방식을 알기 위해 오직 한 곳만 보면 됩니다: `Published` 구조체의 `State`에 구현된 내용말이죠.
 
-- Only allow adding text content when a post is in the `Draft` state
-- Add a `reject` method that changes the post's state from `PendingReview` back
-  to `Draft`
-- Require two calls to `approve` before changing the state to `Published`
+만약 우리가 상태 패턴을 사용하지 않고 다른 방식으로 구현한다면, `Post` 혹은 `main` 코드에서 `match` 표현문을 대신 사용하여 게시물의 상태를 검사하고 이에 따라 해야 할 행동을 변경해야 할지도 모르겠습니다. 이는 우리가 공개된 상태의 게시물의 구현에 대해 알기 위해서 여러 곳을 보고 이해해야 한다는 것을 뜻합니다! 여기에 우리가 상태를 추가하게 된다면 `match` 표현문은 또 다른 갈래를 추가해야 합니다. 
 
-A downside of the state pattern is that since the states implement the
-transitions between the states, some of the states are coupled to each other.
-If we add another state between `PendingReview` and `Published`, such as
-`Scheduled`, we would have to change the code in `PendingReview` to transition
-to `Scheduled` instead. It would be nicer if `PendingReview` wouldn't need to
-change because of the addition of a new state, but that would mean switching to
-another design pattern.
+상태 패턴을 통해, `Post` 메소드들과 `Post`를 사용하는 곳에서 `match` 표현식을 사용할 필요가 없고, 새로운 상태를 추가하려면, 그저 새로운 구조체와 구조체에 특성 메소드들을 구현하면 됩니다.
 
-There are a few bits of duplicated logic that are a downside of this
-implementation in Rust. It would be nice if we could make default
-implementations for the `request_review` and `approve` methods on the `State`
-trait that return `self`, but this would violate object safety since the trait
-doesn't know what the concrete `self` will be exactly. We want to be able to
-use `State` as a trait object, so we need its methods to be object safe.
+상태 패턴을 사용하면 추가 기능을 구현하기 쉽습니다. 상태 패턴을 사용하여 코드의 단순성을 유지하는 것을 체험해보려면 다음 몇 가지 제안을 시도해보세요:
 
-The other duplication that would be nice to get rid of is the similar
-implementations of the `request_review` and `approve` methods on `Post`. They
-both delegate to the implementation of the same method on the value in the
-`Option` in the `state` field, and set the new value of the `state` field to
-the result. If we had a lot of methods on `Post` that followed this pattern, we
-might consider defining a macro to eliminate the repetition (see Appendix E on
-macros).
+  * `reject` 메소드를 추가하여 게시물의 상태를 `PendingReview`에서 `Draft`로 변경
+  * `Published`로 상태를 변경하기 전에 `approve`가 두 번 호출되도록 강제하기
+  * 사용자들에게 게시물이 `Draft` 상태일 때는 오직 글의 추가만 허용하기. 
+  힌트: 상태 객체가 content를 변경하는 데애 대한 역할을 하지만 `Post`의 수정하기 위한 역할은 하지 않게
 
-A downside of implementing this object-oriented pattern exactly as it's defined
-for object-oriented languages is that we're not taking advantage of Rust's
-strengths as much as we could be. Let's take a look at some changes we can make
-to this code that can make invalid states and transitions into compile time
-errors.
+상태 패턴의 단점 중에 하나는, 상태가 상태 간의 전환을 구현하기 때문에, 어떤 상태들은 서로 간에 의존성이 생기게 됩니다. 만약 우리가 `PendingReview`와 `Published` 사이에 `Scheduled`와 같은 상태를 추가하면, `PendingReview`에서 `Scheduled`로 전환되도록 코드를 변경하여야 합니다. `PendingReview`가 변경될 필요 없도록 수정하는 것은 작은 작업이지만, 이는 다른 디자인 패턴으로의 전환을 의미합니다. 
 
-#### Encoding States and Behavior as Types
+또 다른 단점은 우리가 어떤 로직을 중복시킨 겁니다. 중복의 일부를 제거하려면, 우리는 `State`특성에 `request_review`와 `approve` 메소드를 `self`를 반환하도록 기본 구현을 만들 수 있습니다. 하지만, 이는 특성은 `self`가 확실히 될 고정타입을 알 수 없기 때문에 객체 안정성을 해칩니다. 우리는 `State`를 특성 객체로 사용하길 원하기에, 그의 메소드들은 객체 안전할 필요가 있습니다. 
 
-We're going to show how to rethink the state pattern a bit in order to get a
-different set of tradeoffs. Rather than encapsulating the states and
-transitions completely so that outside code has no knowledge of them, we're
-going to encode the states into different types. When the states are types,
-Rust's type checking will make any attempt to use a draft post where we should
-only use published posts into a compiler error.
+다른 중복은 `Post`에 메소드 `request_review`와 `approve`처럼 유사한 구현을 갖는 것 입니다. 양 메소드는 `Option`의 필드 `state`의 값에 대해 동일한 메소드의 구현을 대행하여, `state` 필드의 새 값을 결과로 설정합니다. 이 패턴을 따라 `Post`에 다량의 메소드를 구현하게 되면, 반복됨을 제거하기 위해 매크로의 정의를 고려해봐야 할 겁니다. (매크로에 대한 자세한 내용은 부록 D 참조) 
 
-Let's consider the first part of `main` from Listing 17-11:
+객체 지향의 언어에서 정의하는 것과 동일하게 상태 패턴을 구현 함으로서, 우리가 사용할 수 있는 Rust의 강점을 다루지 못했습니다. 유효하지 않은 상태나 컴파일 타임의 에러가 될 수 있는 `blog` crate에 대한 몇 가지 변경을 살펴보도록 하겠습니다. 
+
+#### 상태들을 엔코딩하여 타입으로 동작
+
+우리는 다른 기회비용을 얻기 위해 상태 패턴을 고찰하여 보여주려고 합니다. 오히려 상태와 전환을 완전히 캡슐화하여 외부의 코드들이 이를 알 수 없으므로, 상태를 다른 타입들로 인코드 하려고 합니다. 따라서 Rust의 타입 체크 시스템은 공개된 게시물만 허용된 곳에서 게시물 초안을 사용하려는 시도를 방지하기 위해 컴파일 에러를 발생시킵니다. 
+
+항목 17-11의 `main` 첫 부분을 주의깊게 살펴보세요:
 
 <span class="filename">Filename: src/main.rs</span>
 
@@ -508,15 +370,7 @@ fn main() {
 }
 ```
 
-We still want to create a new post in the draft state using `Post::new`, and we
-still want to be able to add text to the post's content. But instead of having
-a `content` method on a draft post that returns an empty string, we're going to
-make it so that draft posts don't have the `content` method at all. That way,
-if we try to get a draft post's content, we'll get a compiler error that the
-method doesn't exist. This will make it impossible for us to accidentally
-display draft post content in production, since that code won't even compile.
-Listing 17-19 shows the definition of a `Post` struct, a `DraftPost` struct,
-and methods on each:
+우리는 여전히 `Post::new`를 사용하여 초안 상태의 새 게시물을 생성할 수 있도록 하며 게시물의 컨텐츠에 새 글을 추가할 수 있는 기능을 허용합니다. 그 대신 초안 게시물의 `content` 메소드는 빈 문자열을 반환하지만, 대신 우리는 초안 게시물이 `content` 메소드를 갖지 않도록 만들려고 합니다. 이러면, 우리가 만약 초안 게시물의 컨텐츠를 얻고자 시도할 때, 해당 메소드가 존재하지 않는다는 컴파일 에러를 얻게 될 겁니다. 결과적으로, 혹여 제작 중인 컨텐츠의 초안을 얻게 되는 일이 불가능하게 됩니다. 왜냐면 아예 컴파일이 되지 않거든요! 항목 17-19에서 `Post` 구조체와 `DraftPost` 구조체의 정의와 각각의 메소드를 보여줍니다:
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -537,7 +391,7 @@ impl Post {
     }
 
     pub fn content(&self) -> &str {
-       &self.content
+        &self.content
     }
 }
 
@@ -548,32 +402,18 @@ impl DraftPost {
 }
 ```
 
-<span class="caption">Listing 17-19: A `Post` with a `content` method and a
-`DraftPost` without a `content` method</span>
+<span class="caption">
+항목 17-19: `content` 메소드가 있는 `Post`와 `content` 메소드가 없는 `DraftPost`</span>
 
-Both the `Post` and `DraftPost` structs have a private `content` field that stores the
-blog post text. The structs no longer have the `state` field since we're moving
-the encoding of the state to the types of the structs. `Post` will represent a
-published post, and it has a `content` method that returns the `content`.
+`Post`와 `DraftPost` 구조체 모두 private `content` 필드가 있어 블로그 게시물의 글을 보관합니다. 구조체가 더 이상 `state`필드를 갖지 않는 이유는 상태의 인코딩을 구조체의 타입으로 이동시켰기 때문입니다. `Post` 구조체는 공개된 게시물을 나타낼 것이고, 그의 `content` 메소드는 `content`를 반환할 겁니다.
 
-We still have a `Post::new` function, but instead of returning an instance of
-`Post`, it returns an instance of `DraftPost`. It's not possible to create an
-instance of `Post` right now since `content` is private and there aren't any
-functions that return `Post`. `DraftPost` has an `add_text` method defined on
-it so that we can add text to `content` as before, but note that `DraftPost`
-does not have a `content` method defined! So we've enforced that all posts
-start as draft posts, and draft posts don't have their content available for
-display. Any attempt to get around these constraints will be a compiler error.
+우리는 여전히 `Post::new` 함수를 유지하지만, `Post`의 인스턴스를 반환하지 않고, 대신 `DraftPost`를 반환합니다. 왜냐면 `content`는 private이고 `Post`를 반환할 어떤 함수도 존재하지 않기 때문에, `Post`의 인스턴스를 생성하는 것은 당장은 불가합니다. 
 
-#### Implementing Transitions as Transformations into Different Types
+`DraftPost` 구조체가 가진 `add_text`메소드로, 우리는 전처럼 `content`에 글을 추가할 수 있지만, 주의할 것은 `DraftPost`는 `content` 메소드의 정의를 갖지 않습니다! 그래서 현재 프로그램은 모든 게시물이 초안 게시물로 생성될 것이라고 확고히 할 수 있으며 초안 게시물들은 그들의 컨텐츠를 출력할 수 없습니다. 이 제약사항을 벗어나는 어떤 시도도 컴파일러 에러를 얻게 될 겁니다. 
 
-So how do we get a published post then? The rule we want to enforce is that a
-draft post has to be reviewed and approved before it can be published. A post
-in the pending review state should still not display any content. Let's
-implement these constraints by adding another struct, `PendingReviewPost`,
-defining the `request_review` method on `DraftPost` to return a
-`PendingReviewPost`, and defining an `approve` method on `PendingReviewPost` to
-return a `Post` as shown in Listing 17-20:
+#### 다른 타입으로 변화하는 전환 구현
+
+그래서 우리는 어떻게 공개된 게시물을 얻을 수 있을까? 우리는 게시물 초안이 공개되기 전에 리뷰와 승인을 받게 강제하고 싶습니다. 리뷰 상태인 게시물은 어떤 컨텐츠도 공개되서는 안되구요. 이런 제약사항들을 새 구조체 `PendingReviewPost`를 추가하여 구현해봅시다. `request_review` 메소드를 `DraftPost`에 구현하여 `PendingReviewPost`를 반환하도록 정의하고, `approve`메소드를 `PendingReviewPost`에 정의하여 `Post`를 반환하도록, 항목 17-20처럼 만들어 보겠습니다.
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -587,7 +427,7 @@ return a `Post` as shown in Listing 17-20:
 # }
 #
 impl DraftPost {
-    // ...snip...
+    // --snip--
 
     pub fn request_review(self) -> PendingReviewPost {
         PendingReviewPost {
@@ -609,30 +449,12 @@ impl PendingReviewPost {
 }
 ```
 
-<span class="caption">Listing 17-20: A `PendingReviewPost` that gets created by
-calling `request_review` on `DraftPost`, and an `approve` method that turns a
-`PendingReviewPost` into a published `Post`</span>
+<span class="caption">
+항목 17-20: `PendingReviewPost`는 `DraftPost`에 `request_review`의 호출을 통해 생성하여 얻을 수 있고, `approve` 메소드는 `PendingReviewPost`를 공개된 `Post`로 전환합니다. </span>
 
-The `request_review` and `approve` methods take ownership of `self`, thus
-consuming the `DraftPost` and `PendingReviewPost` instances and transforming
-them into a `PendingReviewPost` and a published `Post`, respectively. This way,
-we won't have any `DraftPost` instances lingering around after we've called
-`request_review` on them, and so forth. `PendingReviewPost` doesn't have a
-`content` method defined on it, so attempting to read its content is a compiler
-error like it is with `DraftPost`. Because the only way to get a published
-`Post` instance that does have a `content` method defined is to call the
-`approve` method on a `PendingReviewPost`, and the only way to get a
-`PendingReviewPost` is to call the `request_review` method on a `DraftPost`,
-we've now encoded the blog post workflow into the type system.
+`request_review`와 `approve` 메소드는 `self`의 소유권을 취합니다, 이는 각각의 `DraftPost`와 `PendingReviewPost`의 인스턴스를 소비하여 그를 `PendingReviewPost`와 공개된 `Post`로 변화시킵니다. 여기서, 우리는 `DraftPost` 인스턴스를 `request_review`를 호출한 후에 유지하는 것을 원치 않습니다. `PendingReviewPost` 구조체는 `content`메소드의 정의를 갖지 않기 때문에, 그의 컨텐츠를 읽으려는 시도는 `DraftPost`와 마찬가지로 컴파일 에러를 발생시킵니다. `content` 메소드를 정의하고 있는 공개된 `Post` 인스턴스를 얻을 수 있는 유일한 방법은 `PendingReiewPost`에 `approve` 메소드를 호출하는 것이고, `PendingReviewPost`를 얻을 수 있는 유일한 방법은 `DraftPost`에 `request_review`를 호출하는 것이기에, 우리는 이제 블로그 게시물의 작업 흐름을 타입 시스템으로 인코드 해야 합니다. 
 
-This does mean we have to make some small changes to `main`. Because
-`request_review` and `approve` return new instances rather than modifying the
-struct they're called on, we need to add more `let post = ` shadowing
-assignments to save the returned instances. We also can't have the assertions
-about the draft and pending review post's contents being empty string anymore,
-nor do we need them: we can't compile code that tries to use the content of
-posts in those states any longer. The updated code in `main` is shown in
-Listing 17-21:
+하지만 우리는 여전히 `main`에 약간의 변화를 줘야 합니다. `request_review`와 `approve` 메소드는 구조체를 변경하지 않고 새 인스턴스를 반환하기 때문에, 우리는 `let post =`를 추가하여 shadowing 대입을 통해 반환되는 인스턴스를 보관해야 합니다. 또한 초안과 리뷰 중인 게시물의 컨텐츠가 빈 문자열이라고 assert할 수 없기 때문에, assert가 필요하지 않습니다: 더 이상 이들 상태들에서 게시물이ㅡ 컨텐츠를 사용하려는 시도들은 컴파일 할 수 없습니다. 갱신된 `main`코드는 항목 17-21에서 보여줍니다:
 
 <span class="filename">Filename: src/main.rs</span>
 
@@ -653,41 +475,17 @@ fn main() {
 }
 ```
 
-<span class="caption">Listing 17-21: Modifications to `main` to use the new
-implementation of the blog post workflow</span>
+<span class="caption">
+항목 17-21: `main`을 수정하여 블로그 게시물 작업 흐름의 새 구현을 사용하기</span>
 
-Having to change `main` to reassign `post` is what makes this implementation
-not quite following the object-oriented state pattern anymore: the
-transformations between the states are no longer encapsulated entirely within
-the `Post` implementation. However, we've gained the property of having invalid
-states be impossible because of the type system and type checking that happens
-at compile time! This ensures that certain bugs, such as displaying the content
-of an unpublished post, will be discovered before they make it to production.
+우리가 해야하는 변경은 `main`에서 `post`의 재할당으로 이는 더 이상 구현이 객체-지향 상태 패턴을 따르지 않는다는 것을 의미합니다: 상태간의 전환은 더 이상 `Post`의 구현 전체에 대해 캡슐화되지 않습니다. 하지만, 우리가 얻은 것은 비허용된 상태가 불가능해지는 것으로 컴파일 타임에 타입 시스템과 타입 체킹을 하기 때문입죠! 이를 통해 공개되지 않은 게시물의 내용이 보여진다거나 하는 버그들은 제품화가 되기 전에 파악될 것을 확신할 수 있습니다. 
 
-Try the tasks suggested that add additional requirements that we mentioned at
-the start of this section to see how working with this version of the code
-feels.
+이번 섹션 시작부에 우리가 언급했던 추가 제약사항으로 건의한 작업을 항목 17-20 이후의 `blog` crate에서 수행하여 이번 버전의 코드 디자인에 대해 생각해보세요. 몇 가지 작업은 이번 디자인에서 이미 완료됐음을 알려드립니다. 
 
-Even though Rust is capable of implementing object-oriented design patterns,
-there are other patterns like encoding state into the type system that are
-available in Rust. These patterns have different tradeoffs than the
-object-oriented patterns do. While you may be very familiar with
-object-oriented patterns, rethinking the problem in order to take advantage of
-Rust's features can give benefits like preventing some bugs at compile-time.
-Object-oriented patterns won't always be the best solution in Rust, since Rust
-has features like ownership that object-oriented languages don't have.
+우리는 Rust를 쓰더라도 객체-지향 디자인 패턴 뿐 아니라 상태를 타입 시스템으로 인코딩하는 다른 패턴들의 구현이 충분히 가능함을 보여줬습니다. 이 패턴들은 서로 다른 기회비용을 가졌습니다. 여러분이 객체 지향 패턴에 익숙하더라도, 컴파일 타임의 버그 방지 같은 Rust의 기능들로 이득을 얻을 수 있는 방식으로 다시 생각해보자. 객체지향 패턴은 Rust가 제공하는 소유권 같이 객체지향 언어에서는 갖지 못한 기능들 덕분에 늘 최고의 해결책이지는 않습니다.
 
-## Summary
+## 요약
 
-No matter whether you think Rust is an object-oriented language or not after
-reading this chapter, you've now seen that trait objects are a way to get some
-object-oriented features in Rust. Dynamic dispatch can give your code some
-flexibility in exchange for a bit of runtime performance. This flexibility can
-be used to implement object-oriented patterns that can help with the
-maintainability of your code. Rust also has different features, like ownership,
-than object-oriented languages. An object-oriented pattern won't always be the
-best way to take advantage of Rust's strengths.
+이 장을 읽은 이후에 여러분이 Rust가 객체지향 언어라고 생각하든 아니든, 여러분은 특성 객체를 사용하여 객체지향 기능을 Rust에서 사용할 수 있다는 것을 알았을 겁니다. 동적 변환은 여러분의 코드에 유연성을 주긴 하지만 실행 성능을 약간 희생해야 합니다. 여러분은 이런 객체지향 패턴을 구현하여 얻은 유연성을 코드의 유지관리에 도움을 받을 수 있습니다. Rust는 소유권과 같은 객체지향 언어들이 갖지 못한 기능들도 갖고 있습니다. 객체지향 패턴은 Rust의 강점을 이용하는 최고의 방법은 아닙니다만, 선택 가능한 옵션입니다.
 
-Next, let's look at another feature of Rust that enables lots of flexibility:
-patterns. We've looked at them briefly throughout the book, but haven't seen
-everything they're capable of yet. Let's go!
+다음으로, 우리는 Rust의 기능으로 높은 유연성을 가능케하는 패턴들에 대해 살펴보고자 합니다. 우리는 이 책에서 간단히 살펴보긴 했지만, 아직 그들의 모든 능력을 살펴본건 아닙니다. 어서 가즈아!

@@ -1,70 +1,22 @@
-## Trait Objects for Using Values of Different Types
+## 특성 객체를 사용하여 다른 타입 간의 값 허용하기.  
 
-In Chapter 8, we said that a limitation of vectors is that vectors can only
-store elements of one type. We had an example in Listing 8-1 where we defined a
-`SpreadsheetCell` enum that had variants to hold integers, floats, and text so
-that we could store different types of data in each cell and still have a
-vector represent a row of cells. This works for cases in which the kinds of
-things we want to be able to treat interchangeably are a fixed set of types that
-we know when our code gets compiled.
+8장에서, 우리가 언급했던 벡터의 한 가지 제약사항은 그들이 한 번에 하나의 타입만 보관할 수 있다는 것입니다. 우리가 만들었던 항목 8-10의 작업내역에서 우리는 `SpreadsheetCell` enum을 정의했고 정수, 부동소수점, 그리고 문자를 보관하게 하고자 했습니다. 이것은 우리가 각 셀에 다른 타입의 데이터를 저장해야 한다는 것을 의미하죠. 완벽하게 훌륭한 솔루션은 우리의 교환가능한 아이템들을 우리가 코드가 컴파일 될 때 우리가 알 수 있는 타입 유형으로 고정하는 것 입니다. 
 
-<!-- The code example I want to reference did not have a listing number; it's
-the one with SpreadsheetCell. I will go back and add Listing 8-1 next time I
-get Chapter 8 for editing. /Carol -->
+하지만, 종종 우리가 원하는 것은 사용자가 우리의 라이브러리를 다양한 타입으로 확장할 수 있게 하여 어떤 상황에서도 유효하게 하는 것이죠. 우리가 원하는 바를 이룰 수 있는지를 보이기 위해, 우리가 만들 그래픽 유저 인터페이스(GUI) 도구는 아이템들의 리스트에 걸쳐 `draw` 메소드를 호출하고 그를 화면에 그리게 될 겁니다. 우리가 만들 라이브러리 크레이트는 `gui`라고 호명되고 GUI 라이브러리 구조를 포괄합니다. 이 크레이트는 사용자들이 사용할 수 있는 몇 가지 타입들, `Button`이나 `TextField` 들을 포함하게 될 것이구요. 추가로, `gui` 사용자들은 그들 고유의 타입을 만들어 그리고자 할 수 있습니다: 일례로, 한 프로그래머는 `Image`를 추가하고자 하고 다른 누군가는 `SelectBox`를 추가하고자 할 수 있습니다.
 
-Sometimes we want the set of types that we use to be extensible by the
-programmers who use our library. For example, many Graphical User Interface
-tools have a concept of a list of items that get drawn on the screen by
-iterating through the list and calling a `draw` method on each of the items.
-We're going to create a library crate containing the structure of a GUI library
-called `rust_gui`. Our GUI library could include some types for people to use,
-such as `Button` or `TextField`. Programmers that use `rust_gui` will want to
-create more types that can be drawn on the screen: one programmer might add an
-`Image`, while another might add a `SelectBox`. We're not going to implement a
-fully-fledged GUI library in this chapter, but we will show how the pieces
-would fit together.
+우리는 이번 예제에서 총체적인 GUI 라이브러리를 구현하지 않겠지만 부분적으로 그들 어떻게 함께 적절하게 동작할 수 있는지 보여주고자 합니다. 라이브러리를 작성하는 시간 동안, 우리는 다른 프로그래머들이 만들고자 하는 모든 타입들을 알 수 없죠. 하지만 우리가 알 수 있는 것은 `gui`가 다른 타입들의 다양한 값에 대해 계속해서 추적해야 하고, `draw` 메소드가 이 다양한 값들 가각에 호출되어야 한다는 겁니다. 정확히 우리가 `draw`메소드를 호출했을 때 벌어지는 일에 대해서 알 필요는 없고, 그저 우리가 메소드를 호출 할 수 있도록 어떤 값을 가지고 있으면 됩니다.
 
-When we're writing the `rust_gui` library, we don't know all the types that
-other programmers will want to create, so we can't define an `enum` containing
-all the types. What we do know is that `rust_gui` needs to be able to keep
-track of a bunch of values of all these different types, and it needs to be
-able to call a `draw` method on each of these values. Our GUI library doesn't
-need to know what will happen exactly when we call the `draw` method, just that
-the value will have that method available for us to call.
+상속을 통해 이를 하기 위해서, `Component`라고 이름지은 클래스를 만들고 `draw`라는 이름의 메소드를 만들어줍니다. 다른 클래스들, `Button`, `Image` 그리고 `SelectBox`같은 다른 클래스들은 `Component`를 상속받고 또한 `draw`메소드를 물려받게 됩니다. 이들은 각각 `draw` 메소드를 재정의 하여 그들 고유의 행위를 정의할 수 있으나, 프레임워크는 모든 유형을 마치 `Component`인 것처럼 다룰 수 있고 `draw`를 호출할 수 있습니다. 하지만 Rust가 상속이 없는 관계로, `gui` 라이브러리를 구축하는 다른 방법을 찾아 상요자들이 새로운 타입을 정의하고 확장할 수 있도록 해야 합니다. 
 
-In a language with inheritance, we might define a class named `Component` that
-has a method named `draw` on it. The other classes like `Button`, `Image`, and
-`SelectBox` would inherit from `Component` and thus inherit the `draw` method.
-They could each override the `draw` method to define their custom behavior, but
-the framework could treat all of the types as if they were `Component`
-instances and call `draw` on them.
 
-### Defining a Trait for the Common Behavior
+### 일반적인 행위에 대한 특성 정의하기
 
-In Rust, though, we can define a trait that we'll name `Draw` and that will
-have one method named `draw`. Then we can define a vector that takes a *trait
-object*, which is a trait behind some sort of pointer, such as a `&` reference
-or a `Box<T>` smart pointer. We'll talk about the reason trait objects have to
-be behind a pointer in Chapter 19.
+`gui`에 원하는 바를 구현하기 위해, 우리는 `Draw`라는 이름의 특성을 정의하여 `draw`라는 이름의 메소드 하나를 줄겁니다. 그러면 *특성 객체*를 취하는 벡터를 정의할 수 있습니다. 특성 객체가 가르키는 타입은 우리가 특별히 구현한 특성이죠. 우리는 특성 객체를 어떤 포인터의 정렬로 지정하여 만들 수 있는데, 마치 `&` 참조자나 `Box<T>` 스마트 포인터처럼 말이죠, 그리고 관련된 특성을 지정합니다. (우리가 특성 객체에 포인터를 사용해야 하는 이유는 19장의 “Dynamically Sized Types & Sized” 절에서 다룰 겁니다.) 우리는 제네릭(단일형)이나 콘트렛(복합형) 대신 특성 객체를 사용할 수 있습니다. 특성 객체를 사용하는 곳이 어디든, Rust의 타입 시스템은 컴파일 타임에 어떤 값이 사용되든 문맥 안에서 특성 객체의 특성이 구현되도록 합니다. 
 
-We mentioned that we don't call structs and enums "objects" to distinguish
-structs and enums from other languages' objects. The data in the struct or enum
-fields and the behavior in `impl` blocks is separated, as opposed to other
-languages that have data and behavior combined into one concept called an
-object. Trait objects *are* more like objects in other languages, in the sense
-that they combine the data made up of the pointer to a concrete object with the
-behavior of the methods defined in the trait. However, trait objects are
-different from objects in other languages because we can't add data to a trait
-object. Trait objects aren't as generally useful as objects in other languages:
-their purpose is to allow abstraction across common behavior.
+우리가 Rust에 대해 다뤘던 내용 중에, 구조체와 열거형을 되도록이면 “객체”로 부르는 것을 자제하여 다른 언어의 객체와 구분한다고 하였습니다. 구조체 또는 열거형에서는 구조체 필드의 데이터와 `impl` 블록의 동작이 분리되는 반면, 다른 언어에서는 데이터와 동작이 결합되어 객체로 명명됩니다. 그러나 특성 객체*들은* 데이터와 동작을 결합한다는 의미에서 다른 언어의 객체와 비슷합니다. 그러나 특성 객체는 특성 객체에 데이터를 추가 할 수 없다는 점에서 이전의 객체와 다릅니다. 특성 객체는 다른 언어의 객체 은 방식으로는 유용하지 않습니다: 그들의 특수한 목적은 공통행위를 추상화 할 수 있게 만드는 것이죠. 
 
-A trait defines behavior that we need in a given situation. We can then use a
-trait as a trait object in places where we would use a concrete type or a
-generic type. Rust's type system will ensure that any value we substitute in
-for the trait object will implement the methods of the trait. Then we don't
-need to know all the possible types at compile time, and we can treat all the
-instances the same way. Listing 17-3 shows how to define a trait named `Draw`
-with one method named `draw`:
+항목 17-3은 `draw`라는 이름의 메소드를 갖는 `Draw `라는 특성을 정의하는 방법을 보여줍니다.
+
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -76,13 +28,9 @@ pub trait Draw {
 
 <span class="caption">Listing 17-3: Definition of the `Draw` trait</span>
 
-<!-- NEXT PARAGRAPH WRAPPED WEIRD INTENTIONALLY SEE #199 -->
 
-This should look familiar since we talked about how to define traits in
-Chapter 10. Next comes something new: Listing 17-4 has the definition of a
-struct named `Screen` that holds a vector named `components` that are of type
-`Box<Draw>`. That `Box<Draw>` is a trait object: it's a stand-in for any type
-inside a `Box` that implements the `Draw` trait.
+이 문법은 10장에서 특성을 정의하는 방법에서 다뤘으니 익숙하실 겁니다. 다음은 새로운 문법입니다 : 항목 17-4는 `components` 라는 벡터를 보유하고있는 `Screen`이라는 구조체를 정의합니다.  `Box<Draw>` 타입의 벡터이며,  `Draw` 특성을 구현하는 `Box`에 속하는 모든 타입을 표준으로 취합니다.
+
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -96,12 +44,11 @@ pub struct Screen {
 }
 ```
 
-<span class="caption">Listing 17-4: Definition of the `Screen` struct with a
-`components` field that holds a vector of trait objects that implement the
-`Draw` trait</span>
+<span class="caption">항목 17-4 : `Draw` 특성을 구현한 객체의 벡터 필드 `components`를 소유한 구조체 `Screen`의 정의 </span>
 
-On the `Screen` struct, we'll define a method named `run`, which will call the
-`draw` method on each of its `components` as shown in Listing 17-5:
+
+`Screen` 구조체에서는 항목 17-5와 같이 각 `components` 마다 `draw`메소드를 호출하는 `run` 메소드를 정의합니다.
+
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -123,14 +70,12 @@ impl Screen {
 }
 ```
 
-<span class="caption">Listing 17-5: Implementing a `run` method on `Screen`
-that calls the `draw` method on each component</span>
 
-This is different than defining a struct that uses a generic type parameter
-with trait bounds. A generic type parameter can only be substituted with one
-concrete type at a time, while trait objects allow for multiple concrete types
-to fill in for the trait object at runtime. For example, we could have defined
-the `Screen` struct using a generic type and a trait bound as in Listing 17-6:
+<span class="caption">항목 17-5 : 각 컴포넌트에서 draw 메소드를 호출하는 Screen 에서 run 메소드 구현하기</span>
+
+
+이것은 특성 범위에 제네릭 형식 매개 변수를 사용하는 구조체를 정의하는 것과 다른 작업입니다. 제네릭 형식 매개 변수는 한 번에 하나의 고정된 타입으로만 대입될 수 있습니다. 반면 특성 객체를 사용하면 런타임에 특성 객체에 대해 여러 고정 유형을 포함시킬 수 있습니다. 예를 들어, 항목 17-6처럼 특성 범위내 같이 제네릭 형식과 특성 범위을 사용하여 `Screen` 구조체를 정의 할 수 있습니다.
+
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -153,27 +98,18 @@ impl<T> Screen<T>
 }
 ```
 
-<span class="caption">Listing 17-6: An alternate implementation of the `Screen`
-struct and its `run` method using generics and trait bounds</span>
 
-This only lets us have a `Screen` instance that has a list of components that
-are all of type `Button` or all of type `TextField`. If you'll only ever have
-homogeneous collections, using generics and trait bounds is preferable since
-the definitions will be monomorphized at compile time to use the concrete types.
+<span class="caption">항목 17-6 : 제네릭과 특성 범위를 사용하여 `Screen` 구조체와 `run` 메소드의 대체 구현</span>
 
-With the definition of `Screen` that holds a component list of trait objects in
-`Vec<Box<Draw>>` instead, one `Screen` instance can hold a `Vec` that contains
-a `Box<Button>` as well as a `Box<TextField>`. Let's see how that works, and
-then talk about the runtime performance implications.
+이렇게하면 `Button` 유형의 모든 구성 요소 목록 또는 모든 유형의 `TextField`가 있는 `Screen` 인스턴스로 제한됩니다. 동일 유형의 콜렉션만 사용한다면 제네릭과 특성 범위를 사용하는 것이 바람직합니다. 왜냐하면 정의들은 컴파일 시에 단일 형태로 되어 고정 타입으로 사용되기 때문입니다.
 
-### Implementations of the Trait from Us or Library Users
+반면에 특성 객체를 사용하는 메서드를 사용하면 하나의 `Screen` 인스턴스가 `Box<Button>` 혹은  `Box<TextField>`도 포함할 수 있는 `Vec<T>` 를 보유 할 수 있습니다. 이것이 어떻게 작동하는지 살펴보고 런타임 성능에 미치는 영향에 대해 설명하겠습니다.
 
-Now to add some types that implement the `Draw` trait. We're going to provide
-the `Button` type, and again, actually implementing a GUI library is out of
-scope of this book, so the `draw` method won't have any useful implementation
-in its body. To imagine what the implementation might look like, a `Button`
-struct might have fields for `width`, `height`, and `label`, as shown in
-Listing 17-7:
+
+### 특성 구현하기
+
+이제 우리가 추가하려는 몇가지 타입은 `Draw` 특성을 구현합니다.  우리가 제공하려는 것은 `Button` 타입입니다.  다시금 말하지만, 실제 GUI 라이브러리를 구현하는 것은 이 부그의 범위를 벗어나므로, 우리는 `draw`에는 별다른 구현을 하지 않을 겁니다. 구현하려는 것을 그려보자면, `Button` 구조체는 `width`, `height` 그리고 `label`를 위한 필드를 갖습니다, 항목 17-7을 통해 확인할 수 있습니다.
+
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -190,33 +126,24 @@ pub struct Button {
 
 impl Draw for Button {
     fn draw(&self) {
-        // Code to actually draw a button
+        // code to actually draw a button
     }
 }
 ```
 
-<span class="caption">Listing 17-7: A `Button` struct that implements the
-`Draw` trait</span>
+<span class="caption">항목 17-7 : `Draw` 특성을 구현하는 `Button` 구조체</span>
 
-The `width`, `height`, and `label` fields on `Button` will differ from other
-components, such as a `TextField` type that might have `width`, `height`,
-`label`, and `placeholder` fields instead. Each of the types that we want to be
-able to draw on the screen will implement the `Draw` trait with different code
-in the `draw` method that defines how to draw that type like `Button` has here
-(without any actual GUI code that's out of scope of this chapter). In addition
-to implementing the `Draw` trait, `Button` might also have another `impl` block
-containing methods having to do with what happens if the button is clicked.
-These kinds of methods won't apply to types like `TextField`.
 
-Someone using our library has decided to implement a `SelectBox` struct that
-has `width`, `height`, and `options` fields. They implement the `Draw` trait on
-the `SelectBox` type as well, as shown in Listing 17-8:
+`Button`의 필드인 `width`, `height` 및 `label`필드는 다른 컴포넌트와는 차이가 있는데, `TextField` 타입을 예로 들면,  이 필드들에 추가로 `placeholder` 필드를 추가로 소유할 겁니다. 우리가 화면에 그려주려는 각 필드의는 `Draw`특성을 구현할테지만 `draw`메소드는 각자가 다른 코드를 사용하여 특정 타입을 그리는 방법을 정의할 겁니다.  `Button`이 이 경우죠(이 챕터의 범주를 벗어나기 때문에 실질적인 GUI 코드 없이).  예를 들어, `impl` 블록에 추가적으로 사용자가 버튼을 클릭했을 때와 관련된 메소드들이 포함될 수 있습니다. 이런 종류의 메소드는 `TextField`와 같은 타입에는 적용할 수 없죠.
+
+라이브러리를 사용하는 누군가가 `width`, `height` 및 `options` 필드가 있는 `SelectBox` 구조체를 구현하기로 했다면,  항목 17-8과 같이 `SelectBox` 타입에도 `Draw` 특성을 구현합니다. 
+
 
 <span class="filename">Filename: src/main.rs</span>
 
 ```rust,ignore
-extern crate rust_gui;
-use rust_gui::Draw;
+extern crate gui;
+use gui::Draw;
 
 struct SelectBox {
     width: u32,
@@ -226,24 +153,21 @@ struct SelectBox {
 
 impl Draw for SelectBox {
     fn draw(&self) {
-        // Code to actually draw a select box
+        // code to actually draw a select box
     }
 }
 ```
 
-<span class="caption">Listing 17-8: Another crate using `rust_gui` and
-implementing the `Draw` trait on a `SelectBox` struct</span>
+<span class="caption">항목 17-8: `gui`를 사용하고 `Draw`특성을 `SelectBox` 구조체에 구현한 또 다른 크레이트</span>
 
-The user of our library can now write their `main` function to create a
-`Screen` instance and add a `SelectBox` and a `Button` to the screen by putting
-each in a `Box<T>` to become a trait object. They can then call the `run`
-method on the `Screen` instance, which will call `draw` on each of the
-components. Listing 17-9 shows this implementation:
+
+우리의 라이브러리 사용자는 `Screen` 인스턴스를 만들어 `main` 함수를 구현할 수 있습니다. `Screen`인스턴스에, 그들은 `SelectBox`와 `Button`을 추가할 수 있도록 각각을 `Box<T>`에 특성 객체로서 추가하면 됩니다. 그리고 `Screen` 인스턴스에 `run` 메소드를 호출함으로, 각 컴포넌트들에 대해 `draw`를 호출할 수 있습니다. 항목 17-9는 이런 대한 구현을 보여줍니다.
+
 
 <span class="filename">Filename: src/main.rs</span>
 
 ```rust,ignore
-use rust_gui::{Screen, Button};
+use gui::{Screen, Button};
 
 fn main() {
     let screen = Screen {
@@ -269,38 +193,23 @@ fn main() {
 }
 ```
 
-<span class="caption">Listing 17-9: Using trait objects to store values of
-different types that implement the same trait</span>
+<span class="caption">항목 17-9: 특성 객체를 사용하여 동일 특성을 구현하는 다른 타입들의 값 저장하기</span>
 
-Even though we didn't know that someone would add the `SelectBox` type someday,
-our `Screen` implementation was able to operate on the `SelectBox` and draw it
-because `SelectBox` implements the `Draw` type, which means it implements the
-`draw` method.
 
-Only being concerned with the messages a value responds to, rather than the
-value's concrete type, is similar to a concept called *duck typing* in
-dynamically typed languages: if it walks like a duck, and quacks like a duck,
-then it must be a duck! In the implementation of `run` on `Screen` in Listing
-17-5, `run` doesn't need to know what the concrete type of each component is.
-It doesn't check to see if a component is an instance of a `Button` or a
-`SelectBox`, it just calls the `draw` method on the component. By specifying
-`Box<Draw>` as the type of the values in the `components` vector, we've defined
-that `Screen` needs values that we can call the `draw` method on.
+우리가 라이브러리를 작성할 때는, 누군가 `SelectBox` 타입을 추가할 수도 있다는 것을 알 수 없었습니다.  하지만 우리가 구현한 `Screen`이 새로운 타입에 대해서도 동작하며 그를 그려낼 수 있는 이유는 
+`SelectBox` 구현이 `Draw` 타입이기 때문이고, 이는 `draw` 메소드를 구현했다는 것을 의미합니다. 이런 개념 — 값이 어떤 고정 타입이냐가 아닌 값이 전달하고자 하는 메시지에 중심을 두는 — 은 *오리 타이핑*이란 개념으로 동적 타입 언어들에서 사용하는 것과 유사합니다: 만약 오리처럼 뒤뚱거리고 오리처럼 꽉꽉거리면, 그것은 오리여야 합니다! 
 
-The advantage with using trait objects and Rust's type system to do duck typing
-is that we never have to check that a value implements a particular method at
-runtime or worry about getting errors if a value doesn't implement a method but
-we call it. Rust won't compile our code if the values don't implement the
-traits that the trait objects need.
+항목 17-5에 나오는 `Screen`에 구현된 `run`을 보면, `run`은 각 구서요소가 어떤 고정 타입인지 알 필요가 없습니다. 왜냐면 컴포넌트가 `Button`인지 `SelectBox`인지 타입에 대한 확인을 하지 않고, 그저 컴포넌트에 대해 `draw`메소드를 호출합니다.
 
-For example, Listing 17-10 shows what happens if we try to create a `Screen`
-with a `String` as a component:
+특성 객체를 사용하고 Rust의 타입 시스템을 사용하여 코드를 작성하는 것은 오리타이핑을 사용하는 것과 같은 장점이 있는데, 이는 우리가 런타임에 값이 특정 메소드를 구현하지 않아서 에러가 발생하지 않을까 걱정되서 값을 체크할 필요가 전혀 없으면서도 어쨌든 이를 호출하게 된다는 겁니다. Rust는 값이 특성 객체가 필요한 특성을 구현하지 않았다면 컴파일하지 않을 겁니다.
+
+예제 항목 17-10은 `String`을 컴포넌트로 `Screen`을 구현하면 어떤 일이 벌어지는지 보여줍니다.
 
 <span class="filename">Filename: src/main.rs</span>
 
 ```rust,ignore
-extern crate rust_gui;
-use rust_gui::Draw;
+extern crate gui;
+use gui::Screen;
 
 fn main() {
     let screen = Screen {
@@ -313,121 +222,47 @@ fn main() {
 }
 ```
 
-<span class="caption">Listing 17-10: Attempting to use a type that doesn't
-implement the trait object's trait</span>
 
-We'll get this error because `String` doesn't implement the `Draw` trait:
+<span class="caption">항목 17-10: 특성 객체의 특성을 구현하지 않은 타입의 사용을 시도</span>
+
+우리는 에러를 보게 될 것이며 이유는 `String` 이 `Draw`특성을 구현하지 않기 때문입니다.
+
 
 ```text
-error[E0277]: the trait bound `std::string::String: Draw` is not satisfied
-  -->
+error[E0277]: the trait bound `std::string::String: gui::Draw` is not satisfied
+  --> src/main.rs:7:13
    |
- 4 |             Box::new(String::from("Hi")),
-   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Draw` is not
+ 7 |             Box::new(String::from("Hi")),
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait gui::Draw is not
    implemented for `std::string::String`
    |
-   = note: required for the cast to the object type `Draw`
+   = note: required for the cast to the object type `gui::Draw`
 ```
 
-This lets us know that either we're passing something we didn't mean to pass to
-`Screen` and we should pass a different type, or we should implement `Draw` on
-`String` so that `Screen` is able to call `draw` on it.
 
-### Trait Objects Perform Dynamic Dispatch
+이 에러가 우리에게 알려주는 것은 우리가 통과하지 못할 것이라고 의도한 대로 `Screen`에 뭔가를 넘겨주었고, 
+다른 타입을 전달하거나 `String`에 `Draw`를 구현하여 여기서 `draw`를 호출할 수 있도록 해야한다는 것 입니다.
 
-Recall in Chapter 10 when we discussed the process of monomorphization that the
-compiler performs when we use trait bounds on generics: the compiler generates
-non-generic implementations of functions and methods for each concrete type
-that we use in place of a generic type parameter. The code that results from
-monomorphization is doing *static dispatch*: when the method is called, the
-code that goes with that method call has been determined at compile time, and
-looking up that code is very fast.
 
-When we use trait objects, the compiler can't perform monomorphization because
-we don't know all the types that might be used with the code. Instead, Rust
-keeps track of the code that might be used when a method is called and figures
-out at runtime which code needs to be used for a particular method call. This
-is known as *dynamic dispatch*, and there's a runtime cost when this lookup
-happens. Dynamic dispatch also prevents the compiler from choosing to inline a
-method's code, which prevents some optimizations. We did get extra flexibility
-in the code that we wrote and were able to support, though, so it's a tradeoff
-to consider.
+### 특성 객체의 동적 디스패치 수행
 
-### Object Safety is Required for Trait Objects
+10장에 나오는 “제네릭을 사용한 코드의 성능“ 섹션에서 우리가 제네릭에 특성 경계를 사용했을 때 컴파일러에 의해 이뤄지는 다형성 프로세스의 실행을 복기해보면: 다형성을 활용하여 작성된 코드는 *정적 디스패치*를 수행하는데, 이를 위해선 컴파일 타임에 당신이 호출하고자 하는 메소드를 컴파일러가 알고 있어야 합니다. 이는 *동적 디스패치*와 반대되는 개념으로, 이는 컴파일러가 당신이 호출하는 메소드를 컴파일 시에 알 수 없을 경우 수행됩니다. 동적 디스패치의 경우, 컴파일러가 생성된 코드는 런타임에 어떤 메소드가 호출될 지 알 수 있습니다. 
 
-<!-- Liz: we're conflicted on including this section. Not being able to use a
-trait as a trait object because of object safety is something that
-beginner/intermediate Rust developers run into sometimes, but explaining it
-fully is long and complicated. Should we just cut this whole section? Leave it
-(and finish the explanation of how to fix the error at the end)? Shorten it to
-a quick caveat, that just says something like "Some traits can't be trait
-objects. Clone is an example of one. You'll get errors that will let you know
-if a trait can't be a trait object, look up object safety if you're interested
-in the details"? Thanks! /Carol -->
+우리가 특성 객체를 사용할 때, Rust는 동적 디스패치만을 수행합니다. 컴파일러는 코드에서 사용될 가능성이 있는 모든 타입을 알지 못하기 때문에, 어떤 타입에 구현된 어떤 메소드를 호출할지 알지 못합니다.  대신 런타임에는, Rust는 특성 객체 내에 존재하는 포인터를 사용하여 어떤 메소드가 호출 될지 알아냅니다. 이렇게 탐색하는 데는 비용이 들며, 정적 디스패치 시에는 일어나지 않습니다. 동적 디스패치는 또한 메소드의 코드를 인라인할지 판단할 수 없게 만들기 때문에 몇가지 최적화를 수행하지 못하게 됩니다. 반면, 우리는 추가적인 유연성을 얻어 항목 17-5와 같은 코드를 작성할 수 있고, 항목 17-9과 같은 활용이 가능해지니, 여기에는 고려해야 할 기회비용이 있다고 하겠습니다.
 
-Not all traits can be made into trait objects; only *object safe* traits can. A
-trait is object safe as long as both of the following are true:
 
-* The trait does not require `Self` to be `Sized`
-* All of the trait's methods are object safe.
+### 개체의 안전성은 특성 객체의 요구사항
 
-`Self` is a keyword that is an alias for the type that we're implementing
-traits or methods on. `Sized` is a marker trait like the `Send` and `Sync`
-traits that we talked about in Chapter 16. `Sized` is automatically implemented
-on types that have a known size at compile time, such as `i32` and references.
-Types that do not have a known size include slices (`[T]`) and trait objects.
+여러분은 *객체-안전*한 특성만을 특성 객체로 만들 수 있습니다. 특성 개체를 안전하게 만드는 모든 속성들을 관장하는 몇가지 복잡한 규칙이 있지만, 연습삼아 두 가지 규칙에 관련해서만 알아보고자 합니다. 특성은 개체 안전하고 만약 모든 메소드들이 특성에 정의되었다면 다음의 속성들을 갖습니다:
 
-`Sized` is an implicit trait bound on all generic type parameters by default.
-Most useful operations in Rust require a type to be `Sized`, so making `Sized`
-a default requirement on trait bounds means we don't have to write `T: Sized`
-with most every use of generics. If we want to be able to use a trait on
-slices, however, we need to opt out of the `Sized` trait bound, and we can do
-that by specifying `T: ?Sized` as a trait bound.
+* 반환되는 값의 타입은  `Self`여서는 안된다.
+* 제네릭 타입의 매개변수는 존재하지 않는다.
 
-Traits have a default bound of `Self: ?Sized`, which means that they can be
-implemented on types that may or may not be `Sized`. If we create a trait `Foo`
-that opts out of the `Self: ?Sized` bound, that would look like the following:
+`Self` 키워드는 우리가 구현하는 특성이나 메소드의 별칭입니다. 특성 개체가 반드시 개체 안전해야 하는 이유는 여러분이 특성 객체를 한번 사용한 뒤에는 Rust가 특성에 구현된 고정 타입을 알 수 없기 때문입니다. 만약 특성 메소드가 고정된 `Self` 타입을 반환하는데 특성 개체는 `Self`의 정확한 타입을 모른다면, 원래 고정 타입을 메소드에서 사용할 수 있는 방법이 없습니다. 특성을 사용할 때 고정 타입 매개변수를 사용하는 제네릭 타입 매개변수도 동일합니다. 고정 타입은 특성이 구현되는 타입으로 결정됩니다. 특성 개체를 사용할 때의 타입을 모르면, 제네릭 타입 매개변수를 채울 타입을 알 수 없습니다. 
 
-```rust
-trait Foo: Sized {
-    fn some_method(&self);
-}
-```
+메소드가 객채 안전하지 않은 특성의 예는 표준 라이브러리의 `Clone` 특성 입니다.  
+`Clone` 객체의 `clone` 메소드의 선언구는 다음과 같습니다:
 
-The trait `Sized` is now a *supertrait* of trait `Foo`, which means trait `Foo`
-requires types that implement `Foo` (that is, `Self`) to be `Sized`. We're
-going to talk about supertraits in more detail in Chapter 19.
-
-The reason a trait like `Foo` that requires `Self` to be `Sized` is not allowed
-to be a trait object is that it would be impossible to implement the trait
-`Foo` for the trait object `Foo`: trait objects aren't sized, but `Foo`
-requires `Self` to be `Sized`. A type can't be both sized and unsized at the
-same time!
-
-For the second object safety requirement that says all of a trait's methods
-must be object safe, a method is object safe if either:
-
-* It requires `Self` to be `Sized` or
-* It meets all three of the following:
-    * It must not have any generic type parameters
-    * Its first argument must be of type `Self` or a type that dereferences to
-      the Self type (that is, it must be a method rather than an associated
-      function and have `self`, `&self`, or `&mut self` as the first argument)
-    * It must not use `Self` anywhere else in the signature except for the
-      first argument
-
-Those rules are a bit formal, but think of it this way: if your method requires
-the concrete `Self` type somewhere in its signature, but an object forgets the
-exact type that it is, there's no way that the method can use the original
-concrete type that it's forgotten. Same with generic type parameters that are
-filled in with concrete type parameters when the trait is used: the concrete
-types become part of the type that implements the trait. When the type is
-erased by the use of a trait object, there's no way to know what types to fill
-in the generic type parameters with.
-
-An example of a trait whose methods are not object safe is the standard
-library's `Clone` trait. The signature for the `clone` method in the `Clone`
-trait looks like this:
 
 ```rust
 pub trait Clone {
@@ -435,21 +270,14 @@ pub trait Clone {
 }
 ```
 
-`String` implements the `Clone` trait, and when we call the `clone` method on
-an instance of `String` we get back an instance of `String`. Similarly, if we
-call `clone` on an instance of `Vec`, we get back an instance of `Vec`. The
-signature of `clone` needs to know what type will stand in for `Self`, since
-that's the return type.
 
-If we try to implement `Clone` on a trait like the `Draw` trait from Listing
-17-3, we wouldn't know whether `Self` would end up being a `Button`, a
-`SelectBox`, or some other type that will implement the `Draw` trait in the
-future.
+`String` 타입은 `Clone` 특성을 구현하고, `String` 인스턴스에 `clone`메소드를 호출하면 우리는 `String`의 인스턴스를 반환받을 수 있습니다. 
+비슷하게, 우리가 `Vec<T>`의 인스턴스에 `clone`을 호출하면, 우리는 `Vec<T>` 인스턴스를 얻을 수 있습니다. 
+`clone` 선언은 `Self`에 어떤 타입이 사용되는지 알 필요가 있습니다, 왜냐면 그게 반환 타입이기 때문이죠. 
 
-The compiler will tell you if you're trying to do something that violates the
-rules of object safety in regards to trait objects. For example, if we had
-tried to implement the `Screen` struct in Listing 17-4 to hold types that
-implement the `Clone` trait instead of the `Draw` trait, like this:
+컴파일러는 여러분이 개체 안전성을 위반하는 무언가를 특성 개체에서 하려고 하면 알려줍니다.
+예를 들어, 항목 17-4에서 `Screen` 구현을 보관하는 타입이 `Draw`특성 구현체가 대신 `Clone` 특성의 구현체가 되도록 바꿔봅시다: 이렇게요:
+
 
 ```rust,ignore
 pub struct Screen {
@@ -457,21 +285,24 @@ pub struct Screen {
 }
 ```
 
-We'll get this error:
+
+우리는 이런 에러를 얻게 될 겁니다:
+
 
 ```text
 error[E0038]: the trait `std::clone::Clone` cannot be made into an object
- -->
+ --> src/lib.rs:2:5
   |
 2 |     pub components: Vec<Box<Clone>>,
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `std::clone::Clone` cannot be
-  made into an object
+made into an object
   |
   = note: the trait cannot require that `Self : Sized`
 ```
 
-<!-- If we are including this section, we would explain how to fix this
-problem. It involves adding another trait and implementing Clone manually for
-that trait. Because this section is getting long, I stopped because it feels
-like we're off in the weeds with an esoteric detail that not everyone will need
-to know about. /Carol -->
+
+이 에러가 의미하는 바는, 여러분은 해당 특성을 해당 특성 개체에 이런 방식으로 사용해서는 안된다는 겁니다. 
+혹시 개체 안전에 대해 보다 자세하게 알고 싶으시면 여기를 참고하세요 [Rust RFC 255].
+
+
+[Rust RFC 255]: https://github.com/rust-lang/rfcs/blob/master/text/0255-object-safety.md
